@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NLHE Pre-Flop Trainer v2</title>
+<title>NLHE Pre-Flop Trainer v2.1</title>
 <style>
   :root { font-family: Arial, sans-serif; color-scheme: dark; }
   body { margin:0; background:#101216; color:#f1f3f5; }
@@ -13,11 +13,14 @@
   textarea { width:100%; min-height:220px; box-sizing:border-box; background:#0d1015; color:#e9edf2; border:1px solid #3a414e; border-radius:8px; padding:12px; font-family:monospace; resize:vertical; }
   button { border:1px solid #46505e; background:#252b35; color:#fff; padding:10px 16px; border-radius:7px; cursor:pointer; font-weight:600; }
   button:hover { background:#303744; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid #74a9ff; outline-offset:1px; }
   button.primary { background:#315f9e; border-color:#4678bb; }
   button.danger { background:#71363b; border-color:#9c4a51; }
-  button.action.selected { outline:3px solid #74a9ff; }
+  button.small { padding:6px 10px; font-size:13px; }
+  button.action.selected { background:#2f6fd0; border-color:#9cc3ff; }
+  button.jam { background:#4a3a1e; border-color:#8c6d2e; }
+  kbd { font-family:monospace; font-size:11px; background:#0d1015; border:1px solid #46505e; border-radius:4px; padding:0 4px; margin-left:4px; color:#aeb6c2; }
   .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   .scenario-row { display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); gap:18px; align-items:stretch; }
   .scenario-row + .scenario-row { margin-top:18px; }
   .scenario { min-width:0; }
@@ -28,39 +31,57 @@
   .card.hearts { color:#d83242; }
   .card.clubs { color:#168447; }
   .card.diamonds { color:#2674df; }
+  .card.changed-card { outline:3px solid #f0b429; }
   .decision-block { display:flex; flex-direction:column; gap:12px; }
-  .decision-block .row { align-items:center; }
   .decision-block .action-buttons { display:flex; gap:8px; flex-wrap:wrap; }
   .scenario { border:1px solid #363d49; border-radius:10px; padding:16px; }
+  .scenario.active-block { border-color:#74a9ff; box-shadow:0 0 0 1px #74a9ff; }
   .scenario h3 { margin-bottom:8px; }
   .muted { color:#aeb6c2; }
   .status { padding:10px 12px; border-radius:8px; background:#12161c; border:1px solid #303642; }
   input, select { background:#0d1015; color:#fff; border:1px solid #3a414e; border-radius:6px; padding:9px; }
+  input:disabled, select:disabled { opacity:.4; cursor:not-allowed; }
   .hidden { display:none !important; }
-  pre { white-space:pre-wrap; word-break:break-word; background:#0d1015; padding:14px; border-radius:8px; max-height:420px; overflow:auto; }
   .progress { height:8px; background:#292f38; border-radius:99px; overflow:hidden; margin:12px 0 20px; }
-  .bar { height:100%; width:0; background:#4e87d1; }
+  .bar { height:100%; width:0; background:#4e87d1; transition:width .2s; }
   .error { color:#ff9b9b; }
   .success { color:#9be0ad; }
   label { font-weight:600; }
   .field { display:flex; flex-direction:column; gap:6px; min-width:120px; }
-  @media(max-width:760px){ .grid{grid-template-columns:1fr;} .scenario-row{grid-template-columns:1fr;} }
+  .chg { font-size:11px; background:#f0b429; color:#1a1300; border-radius:4px; padding:1px 5px; margin-left:6px; font-weight:700; }
+  mark { background:#f0b42933; color:#ffd479; border-radius:3px; padding:0 2px; }
+  .changed-text { color:#ffd479; }
+  .actiontext { font-size:16px; margin:8px 0 0; }
+  .hint { font-size:12px; color:#aeb6c2; margin-top:10px; }
+  table.review { width:100%; border-collapse:collapse; font-size:14px; }
+  table.review th, table.review td { text-align:left; padding:8px 10px; border-bottom:1px solid #303642; }
+  table.review th { color:#aeb6c2; font-weight:600; }
+  .st-ok { color:#9be0ad; } .st-part { color:#ffd479; } .st-skip { color:#ff9b9b; }
+  svg.ring { width:100%; max-width:380px; display:block; margin:8px auto 0; }
+  .ring .table { fill:#14532d; stroke:#1f7a45; stroke-width:2; }
+  .ring .seat { fill:#252b35; stroke:#46505e; stroke-width:2; }
+  .ring .seat.hero { fill:#315f9e; stroke:#9cc3ff; }
+  .ring .seat.acts { stroke:#f0b429; }
+  .ring .seat.dim { opacity:.45; }
+  .ring text { fill:#f1f3f5; font-size:11px; text-anchor:middle; dominant-baseline:central; font-family:Arial,sans-serif; }
+  .ring text.lbl { fill:#ffd479; font-size:10px; }
+  @media(max-width:760px){ .scenario-row{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>NLHE Pre-Flop Trainer <span class="muted">v2.0</span></h1>
+  <h1>NLHE Pre-Flop Trainer <span class="muted">v2.1</span></h1>
 
   <section id="importPanel" class="panel">
     <h2>1. Load Session</h2>
-    <p class="muted">Paste the AI-generated session JSON below. The browser does not need internet access.</p>
-    <textarea id="sessionInput" placeholder='Paste session JSON here...'></textarea>
+    <p class="muted">Paste the AI-generated session JSON below (code fences are fine). The browser does not need internet access.</p>
+    <textarea id="sessionInput" placeholder='Paste session JSON here...' aria-label="Session JSON"></textarea>
     <div class="row" style="margin-top:12px">
       <button class="primary" onclick="loadSession()">Load Session</button>
       <button onclick="loadTestSession()">Load Test Session</button>
       <button onclick="clearAll()">Clear</button>
     </div>
-    <div id="importMessage" style="margin-top:12px"></div>
+    <div id="importMessage" style="margin-top:12px" aria-live="polite"></div>
   </section>
 
   <section id="trainerPanel" class="hidden">
@@ -70,13 +91,17 @@
           <h2 id="sessionTitle">Session</h2>
           <div id="sessionMeta" class="muted"></div>
         </div>
-        <div id="handCounter" class="status"></div>
+        <div class="row">
+          <div id="handCounter" class="status"></div>
+          <button class="small" onclick="showReview()">Review all</button>
+          <button class="small" onclick="finishSession()">Export results now</button>
+        </div>
       </div>
-      <div class="progress"><div id="progressBar" class="bar"></div></div>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progressWrap"><div id="progressBar" class="bar"></div></div>
     </div>
 
     <div class="panel">
-      <h2>Hand Scenarios & Decisions</h2>
+      <h2>Hand Scenarios &amp; Decisions</h2>
       <div class="scenario-row">
         <div id="baseScenario" class="scenario"></div>
         <div id="baseDecision" class="scenario decision-block"></div>
@@ -89,197 +114,310 @@
         <button onclick="previousHand()">← Previous</button>
         <div class="row">
           <button class="danger" onclick="resetCurrentDecision()">Reset</button>
-          <button class="primary" onclick="submitCurrentHand()">Submit Hand →</button>
+          <button id="submitBtn" class="primary" onclick="submitCurrentHand()">Submit Hand →</button>
         </div>
       </div>
-      <div id="decisionMessage" style="margin-top:12px"></div>
+      <div id="decisionMessage" style="margin-top:12px" aria-live="polite"></div>
+      <div class="hint">Keys: <kbd>F</kbd> fold · <kbd>C</kbd> call · <kbd>R</kbd> raise · <kbd>J</kbd> jam · <kbd>1</kbd> RF · <kbd>2</kbd> RC · <kbd>3</kbd> RP · <kbd>B</kbd>/<kbd>T</kbd> switch base/twist · <kbd>Enter</kbd> submit</div>
+    </div>
+  </section>
+
+  <section id="reviewPanel" class="panel hidden">
+    <h2>Review Answers</h2>
+    <p id="reviewSummary" class="muted"></p>
+    <table class="review">
+      <thead><tr><th>Hand</th><th>Hero</th><th>Base</th><th>Twist</th><th>Status</th><th></th></tr></thead>
+      <tbody id="reviewBody"></tbody>
+    </table>
+    <div class="row" style="margin-top:16px">
+      <button onclick="resumeTrainer()">← Back to hands</button>
+      <button class="primary" onclick="finishSession()">Finish &amp; Get Results</button>
     </div>
   </section>
 
   <section id="completePanel" class="panel hidden">
     <h2>Session Complete</h2>
     <p id="completeSummary"></p>
-    <textarea id="resultsOutput" style="min-height:300px"></textarea>
+    <textarea id="resultsOutput" style="min-height:300px" aria-label="Results JSON"></textarea>
     <div class="row" style="margin-top:12px">
       <button class="primary" onclick="copyResults()">Copy Results JSON</button>
       <button onclick="downloadResults()">Download Results JSON</button>
-      <button onclick="startNewSession()">New Session</button>
+      <button onclick="showReview()">← Back to review</button>
+      <button onclick="startNewSession(true)">New Session</button>
     </div>
-    <div id="copyMessage" style="margin-top:12px"></div>
+    <div id="copyMessage" style="margin-top:12px" aria-live="polite"></div>
   </section>
 </div>
 
 <script>
+const APP_VERSION = "2.1";
+const POSITIONS = ["UTG","HJ","CO","BTN","SB","BB"];
+const PLANS = [["RF","RF — Raise to Fold"],["RC","RC — Raise to Call"],["RP","RP — Raise to Push / 5B Jam"]];
+
 let session = null;
 let currentIndex = 0;
-let answers = {};
+let answers = {};          // answers[handId][base|twist] = {action,size_bb,plan}
+let submitted = new Set(); // hand ids the user has explicitly submitted
+let times = {};            // ms spent per hand id
+let handStartedAt = null;
+let startedAt = null;
+let activeKey = "base";
+let returnToReview = false;
 
 const TEST_SESSION = {
   "schema_version":"2.0",
-  "session":{
-    "id":"TEST-01",
-    "generated_at":"2026-10-28T14:00:00Z",
-    "hand_count":3,
-    "mode":"preflop"
-  },
+  "session":{ "id":"TEST-01", "generated_at":"2026-10-28T14:00:00Z", "hand_count":4, "mode":"preflop" },
   "hands":[
-    {
-      "id":61,
-      "base":{
-        "hero":{"position":"BTN","cards":["9c","8c"]},
-        "effective_stack_bb":100,
-        "action":"HJ opens 2.2BB"
-      },
-      "twist":{
-        "hero":{"position":"BTN","cards":["9c","8c"]},
-        "effective_stack_bb":100,
-        "action":"HJ opens 2.2BB, CO calls"
-      }
-    },
-    {
-      "id":62,
-      "base":{
-        "hero":{"position":"SB","cards":["Ac","3c"]},
-        "effective_stack_bb":100,
-        "action":"CO opens 2.2BB, BTN folds"
-      },
-      "twist":{
-        "hero":{"position":"SB","cards":["Ac","3c"]},
-        "effective_stack_bb":100,
-        "action":"BTN opens 3.5BB"
-      }
-    },
-    {
-      "id":63,
-      "base":{
-        "hero":{"position":"BB","cards":["Kd","Qd"]},
-        "effective_stack_bb":100,
-        "action":"SB opens 3BB"
-      },
-      "twist":{
-        "hero":{"position":"BB","cards":["Kd","Qd"]},
-        "effective_stack_bb":100,
-        "action":"UTG opens 2.5BB, BTN calls"
-      }
-    }
+    { "id":9001,
+      "base":{ "hero":{"position":"BTN","cards":["9c","8c"]}, "effective_stack_bb":100, "action":"HJ opens 2.2BB" },
+      "twist":{ "hero":{"position":"BTN","cards":["9c","8c"]}, "effective_stack_bb":100, "action":"HJ opens 2.2BB, CO calls" } },
+    { "id":9002,
+      "base":{ "hero":{"position":"SB","cards":["Ac","3c"]}, "effective_stack_bb":100, "action":"CO opens 2.2BB, BTN folds" },
+      "twist":{ "hero":{"position":"SB","cards":["Ac","3c"]}, "effective_stack_bb":100, "action":"BTN opens 3.5BB" } },
+    { "id":9003,
+      "base":{ "hero":{"position":"BB","cards":["Kd","Qd"]}, "effective_stack_bb":100, "action":"SB opens 3BB" },
+      "twist":{ "hero":{"position":"BB","cards":["Kd","Qd"]}, "effective_stack_bb":100, "action":"UTG opens 2.5BB, BTN calls" } },
+    { "id":9004,
+      "base":{ "hero":{"position":"CO","cards":["Ts","9s"]}, "effective_stack_bb":100, "action":"UTG opens 2.5BB, HJ folds" },
+      "twist":{ "hero":{"position":"CO","cards":["Ts","9s"]}, "effective_stack_bb":15, "action":"UTG shoves 15BB, HJ folds" } }
   ]
 };
 
+/* ---------- helpers ---------- */
 function esc(s){
-  return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+function $(id){ return document.getElementById(id); }
+function curHand(){ return session.hands[currentIndex]; }
+function getAns(id,key){
+  answers[id] ||= {};
+  answers[id][key] ||= { action:"", size_bb:null, plan:"" };
+  return answers[id][key];
+}
+function stackOf(h,key){ return h[key].effective_stack_bb; }
+
+function normCard(c){
+  const m = /^(10|[2-9TJQKA])([shdc])$/i.exec(String(c).trim());
+  if(!m) return null;
+  let r = m[1].toUpperCase();
+  if(r === "10") r = "T";
+  return r + m[2].toLowerCase();
 }
 
-function cardHtml(cards){
+/* ---------- rendering: cards, seat ring, scenarios ---------- */
+function cardHtml(cards, baseCards){
   if(!cards || !cards.length) return "";
-  const suits = {
-    s: { symbol: "♠", name: "spades" },
-    h: { symbol: "♥", name: "hearts" },
-    c: { symbol: "♣", name: "clubs" },
-    d: { symbol: "♦", name: "diamonds" }
-  };
-  return `<div class="cards">${cards.map(c=>{
-    const code = String(c);
-    const rank = code.slice(0, -1).toUpperCase();
+  const suits = { s:{symbol:"♠",name:"spades"}, h:{symbol:"♥",name:"hearts"}, c:{symbol:"♣",name:"clubs"}, d:{symbol:"♦",name:"diamonds"} };
+  return `<div class="cards">${cards.map((code,i)=>{
+    const rank = code.slice(0,-1).toUpperCase().replace("T","10");
     const suit = suits[code.slice(-1).toLowerCase()];
-    if(!suit) return `<div class="card">${esc(code)}</div>`;
-    return `<div class="card ${suit.name}"><span>${esc(rank)}</span><span class="suit">${suit.symbol}</span></div>`;
+    const changed = baseCards && baseCards[i] !== code ? " changed-card" : "";
+    return `<div class="card ${suit.name}${changed}"><span>${esc(rank)}</span><span class="suit">${suit.symbol}</span></div>`;
   }).join("")}</div>`;
 }
 
-function renderScenario(name, data){
+const VERBS = "opens?|open-raises?|raises?|3-?bets?|4-?bets?|5-?bets?|limps?|calls?|flats?|folds?|squeezes?|jams?|shoves?|bets?|checks?";
+function parseSeats(action){
+  const seats = {};
+  const re = new RegExp(`^\\s*(UTG|HJ|CO|BTN|SB|BB)\\s+((?:${VERBS})\\b.*)$`, "i");
+  String(action || "").split(/[,;]|\bthen\b|\band\b/i).forEach(cl=>{
+    const m = re.exec(cl);
+    if(m) seats[m[1].toUpperCase()] = m[2].trim();
+  });
+  return seats;
+}
+
+function seatRing(sc){
+  const hero = sc.hero.position, heroIdx = POSITIONS.indexOf(hero);
+  const seats = parseSeats(sc.action);
+  const cx = 180, cy = 108, rx = 120, ry = 62;
+  let out = `<svg class="ring" viewBox="0 0 360 230" role="img" aria-label="Seat layout, hero in ${esc(hero)}"><ellipse class="table" cx="${cx}" cy="${cy}" rx="${rx-14}" ry="${ry-12}"/>`;
+  POSITIONS.forEach((pos,i)=>{
+    const k = (i - heroIdx + 6) % 6;
+    const a = (90 + k*60) * Math.PI / 180;
+    const x = cx + rx*Math.cos(a), y = cy + ry*Math.sin(a);
+    const isHero = pos === hero, acts = !!seats[pos];
+    const cls = "seat" + (isHero ? " hero" : "") + (acts ? " acts" : "") + (!isHero && !acts ? " dim" : "");
+    let label = isHero ? "" : (seats[pos] || "");
+    const full = label;
+    if(label.length > 22) label = label.slice(0,21) + "…";
+    const ly = y > cy ? y + 29 : y - 26;
+    out += `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="18"/><text x="${x.toFixed(1)}" y="${y.toFixed(1)}">${pos}</text>`;
+    if(label) out += `<text class="lbl" x="${x.toFixed(1)}" y="${ly.toFixed(1)}"><title>${esc(full)}</title>${esc(label)}</text>`;
+  });
+  return out + `</svg>`;
+}
+
+function markedAction(text, baseText){
+  const norm = t => t.toLowerCase().replace(/[^a-z0-9.\-]/g,"");
+  const baseSet = new Set(String(baseText||"").split(/\s+/).map(norm));
+  return String(text||"").split(/(\s+)/).map(tok=>{
+    if(!tok.trim()) return esc(tok);
+    return baseSet.has(norm(tok)) ? esc(tok) : `<mark>${esc(tok)}</mark>`;
+  }).join("");
+}
+
+function renderScenario(name, data, base){
+  const diff = !!base;
+  const posChg = diff && base.hero.position !== data.hero.position;
+  const stkChg = diff && base.effective_stack_bb !== data.effective_stack_bb;
+  const cardsChg = diff && base.hero.cards.join() !== data.hero.cards.join();
+  const badge = '<span class="chg">changed</span>';
+  const actionHtml = diff ? markedAction(data.action, base.action) : esc(data.action);
   return `
     <h3>${esc(name)}</h3>
-    <div><strong>Hero:</strong> ${esc(data.hero?.position || "")}</div>
-    ${cardHtml(data.hero?.cards)}
-    <div><strong>Effective stack:</strong> ${esc(data.effective_stack_bb ?? "—")} BB</div>
-    <p>${esc(data.action || "")}</p>
+    <div class="${posChg?"changed-text":""}"><strong>Hero:</strong> ${esc(data.hero.position)}${posChg?badge:""}</div>
+    ${cardHtml(data.hero.cards, diff && cardsChg ? base.hero.cards : null)}
+    <div class="${stkChg?"changed-text":""}"><strong>Effective stack:</strong> ${esc(data.effective_stack_bb ?? "—")} BB${stkChg?badge:""}</div>
+    ${seatRing(data)}
+    <p class="actiontext">${actionHtml}</p>
   `;
 }
 
+/* ---------- import + validation ---------- */
+function extractJson(raw){
+  let t = raw.trim().replace(/^```[a-z]*\s*/i,"").replace(/```\s*$/,"").trim();
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if(a === -1 || b === -1 || b < a) throw new Error("No JSON object found.");
+  return t.slice(a, b+1);
+}
+
+function validateScenario(label, sc){
+  if(!sc || typeof sc !== "object") throw new Error(`${label}: missing scenario.`);
+  const hero = sc.hero;
+  if(!hero || typeof hero !== "object") throw new Error(`${label}: missing hero data.`);
+  const pos = String(hero.position || "").toUpperCase();
+  if(!POSITIONS.includes(pos)) throw new Error(`${label}: invalid position "${hero.position}" (use ${POSITIONS.join(", ")}).`);
+  hero.position = pos;
+  if(!Array.isArray(hero.cards) || hero.cards.length !== 2) throw new Error(`${label}: hero.cards must hold exactly 2 cards.`);
+  const cards = hero.cards.map(normCard);
+  if(cards.includes(null)) throw new Error(`${label}: invalid card in ${JSON.stringify(hero.cards)} (use e.g. Ah, Td, 9c).`);
+  if(cards[0] === cards[1]) throw new Error(`${label}: duplicate card ${cards[0]}.`);
+  hero.cards = cards;
+  if(sc.effective_stack_bb !== undefined && sc.effective_stack_bb !== null){
+    const n = Number(sc.effective_stack_bb);
+    if(!(n > 0)) throw new Error(`${label}: effective_stack_bb must be a positive number.`);
+    sc.effective_stack_bb = n;
+  }
+  if(typeof sc.action !== "string" || !sc.action.trim()) throw new Error(`${label}: action text is missing.`);
+}
+
+function validateSession(s){
+  if(!s || typeof s !== "object") throw new Error("Session must be an object.");
+  if(String(s.schema_version) !== "2.0") throw new Error(`Unsupported schema_version "${s.schema_version}" (expected "2.0").`);
+  if(!s.session || !s.session.id) throw new Error("Missing session.id.");
+  if(!Array.isArray(s.hands) || !s.hands.length) throw new Error("No hands found.");
+  if(s.session.hand_count !== undefined && Number(s.session.hand_count) !== s.hands.length)
+    throw new Error(`session.hand_count (${s.session.hand_count}) does not match the ${s.hands.length} hands supplied.`);
+  const seen = new Set();
+  s.hands.forEach((h,i)=>{
+    if(h.id === undefined || h.id === null) throw new Error(`Hand ${i+1} is missing id.`);
+    const key = String(h.id);
+    if(seen.has(key)) throw new Error(`Duplicate hand id ${h.id}.`);
+    seen.add(key);
+    if(!h.base || !h.twist) throw new Error(`Hand ${h.id} needs base and twist.`);
+    validateScenario(`Hand ${h.id} base`, h.base);
+    validateScenario(`Hand ${h.id} twist`, h.twist);
+  });
+}
+
 function loadSession(){
-  const raw = document.getElementById("sessionInput").value.trim();
+  const raw = $("sessionInput").value.trim();
   if(!raw){ showImport("Paste some JSON first.", true); return; }
   try{
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(extractJson(raw));
     validateSession(parsed);
     session = parsed;
-    currentIndex = 0;
-    answers = {};
-    document.getElementById("completePanel").classList.add("hidden");
-    document.getElementById("trainerPanel").classList.remove("hidden");
-    renderHand();
+    currentIndex = 0; answers = {}; submitted = new Set(); times = {};
+    startedAt = new Date().toISOString();
+    returnToReview = false;
     showImport("Session loaded successfully.", false);
+    showPanel("trainerPanel");
+    renderHand();
   }catch(e){
     showImport("Invalid session JSON: " + e.message, true);
   }
 }
 
-function validateSession(s){
-  if(!s || typeof s !== "object") throw new Error("Session must be an object.");
-  if(!s.schema_version) throw new Error("Missing schema_version.");
-  if(!s.session || !s.session.id) throw new Error("Missing session.id.");
-  if(!Array.isArray(s.hands) || !s.hands.length) throw new Error("No hands found.");
-  s.hands.forEach((h,i)=>{
-    if(h.id === undefined) throw new Error(`Hand ${i+1} is missing id.`);
-    if(!h.base || !h.twist) throw new Error(`Hand ${h.id} needs base and twist.`);
-    if(!h.base.hero || !h.twist.hero) throw new Error(`Hand ${h.id} needs hero data.`);
-  });
-}
-
 function showImport(msg,error){
-  const el=document.getElementById("importMessage");
-  el.textContent=msg;
-  el.className=error?"error":"success";
+  const el = $("importMessage");
+  el.textContent = msg;
+  el.className = error ? "error" : "success";
 }
 
-function renderHand(){
-  const h=session.hands[currentIndex];
-  document.getElementById("sessionTitle").textContent =
-    `Session ${session.session.id}`;
-  document.getElementById("sessionMeta").textContent =
-    `${session.hands.length} hands • ${session.session.mode || "preflop"} • schema ${session.schema_version}`;
-  document.getElementById("handCounter").textContent =
-    `Hand ${currentIndex+1} / ${session.hands.length} • ID ${h.id}`;
-  document.getElementById("progressBar").style.width =
-    `${((currentIndex)/session.hands.length)*100}%`;
+function showPanel(name){
+  ["importPanel","trainerPanel","reviewPanel","completePanel"].forEach(p=>$(p).classList.toggle("hidden", p !== name));
+}
 
-  document.getElementById("baseScenario").innerHTML=renderScenario("BASE SCENARIO",h.base);
-  document.getElementById("twistScenario").innerHTML=renderScenario("WHAT IF? TWIST",h.twist);
+/* ---------- time tracking ---------- */
+function leaveHand(){
+  if(handStartedAt !== null && session){
+    const id = curHand().id;
+    times[id] = (times[id] || 0) + (Date.now() - handStartedAt);
+  }
+  handStartedAt = null;
+}
+
+/* ---------- hand view ---------- */
+function renderHand(){
+  const h = curHand();
+  $("sessionTitle").textContent = `Session ${session.session.id}`;
+  $("sessionMeta").textContent = `${session.hands.length} hands • ${session.session.mode || "preflop"} • schema ${session.schema_version}`;
+  $("handCounter").textContent = `Hand ${currentIndex+1} / ${session.hands.length} • ID ${h.id}`;
+  updateProgress();
+  $("baseScenario").innerHTML = renderScenario("BASE SCENARIO", h.base, null);
+  $("twistScenario").innerHTML = renderScenario("WHAT IF? TWIST", h.twist, h.base);
+  $("submitBtn").textContent = (currentIndex === session.hands.length-1 || returnToReview) ? "Submit & Review →" : "Submit Hand →";
+  const a = answers[h.id] || {};
+  activeKey = validateDecision(a.base, stackOf(h,"base")) ? "base" : (validateDecision(a.twist, stackOf(h,"twist")) ? "twist" : "base");
   renderDecisionForm();
+  handStartedAt = Date.now();
+}
+
+function updateProgress(){
+  const pct = Math.round(submitted.size / session.hands.length * 100);
+  $("progressBar").style.width = pct + "%";
+  $("progressWrap").setAttribute("aria-valuenow", pct);
 }
 
 function renderDecisionForm(){
-  const h=session.hands[currentIndex];
-  const saved=answers[h.id] || {};
-  document.getElementById("baseDecision").innerHTML=decisionBlock("base","Base Decision",saved.base);
-  document.getElementById("twistDecision").innerHTML=decisionBlock("twist","Twist Decision",saved.twist);
-  document.getElementById("decisionMessage").textContent="";
+  const h = curHand();
+  ["base","twist"].forEach(key=>{
+    const el = $(key + "Decision");
+    el.className = "scenario decision-block" + (activeKey === key ? " active-block" : "");
+    el.onclick = () => setActive(key);
+    el.innerHTML = decisionBlock(key, key === "base" ? "Base Decision" : "Twist Decision", getAns(h.id,key), stackOf(h,key));
+  });
+  $("decisionMessage").textContent = "";
 }
 
-function decisionBlock(key,title,data={}){
-  const action=data.action || "";
-  const plan=data.plan || "";
+function setActive(key){
+  activeKey = key;
+  $("baseDecision").classList.toggle("active-block", key === "base");
+  $("twistDecision").classList.toggle("active-block", key === "twist");
+}
+
+function decisionBlock(key,title,d,stack){
+  const isRaise = d.action === "RAISE";
+  const dis = isRaise ? "" : "disabled";
   return `
     <h3>${title}</h3>
     <div class="action-buttons">
       ${["FOLD","CALL","RAISE"].map(a=>
-        `<button class="action ${action===a?"selected":""}" onclick="setAction('${key}','${a}')">${a}</button>`
+        `<button type="button" class="action ${d.action===a?"selected":""}" aria-pressed="${d.action===a}" onclick="setAction('${key}','${a}')">${d.action===a?"✓ ":""}${a}<kbd>${a[0]}</kbd></button>`
       ).join("")}
     </div>
     <div class="row" style="margin-top:4px">
       <div class="field">
-        <label>Raise size (BB)</label>
-        <input id="${key}Size" type="number" step="0.1" min="0" value="${esc(data.size_bb ?? "")}" placeholder="e.g. 6.6">
+        <label for="${key}Size">Raise size (BB)</label>
+        <input id="${key}Size" type="number" step="0.1" min="0" ${dis} value="${esc(d.size_bb ?? "")}" placeholder="e.g. 6.6" oninput="setSize('${key}',this.value)">
       </div>
+      ${stack ? `<div class="field"><label>&nbsp;</label><button type="button" class="jam" onclick="setJam('${key}')">Jam ${esc(stack)}BB<kbd>J</kbd></button></div>` : ""}
       <div class="field">
-        <label>Plan</label>
-        <select id="${key}Plan" onchange="setPlan('${key}',this.value)">
+        <label for="${key}Plan">Plan</label>
+        <select id="${key}Plan" ${dis} onchange="setPlan('${key}',this.value,false)">
           <option value="">— none —</option>
-          <option value="RF" ${plan==="RF"?"selected":""}>RF — Raise to Fold</option>
-          <option value="RC" ${plan==="RC"?"selected":""}>RC — Raise to Call</option>
-          <option value="RP" ${plan==="RP"?"selected":""}>RP — Raise to Push / 5B Jam</option>
+          ${PLANS.map(([v,t])=>`<option value="${v}" ${d.plan===v?"selected":""}>${t}</option>`).join("")}
         </select>
       </div>
     </div>
@@ -287,143 +425,251 @@ function decisionBlock(key,title,data={}){
 }
 
 function setAction(key,action){
-  const id=session.hands[currentIndex].id;
-  answers[id] ||= {};
-  answers[id][key] ||= {};
-  answers[id][key].action=action;
-  renderDecisionFormPreserve();
+  const d = getAns(curHand().id,key);
+  d.action = action;
+  if(action !== "RAISE"){ d.size_bb = null; d.plan = ""; }
+  activeKey = (action !== "RAISE" && key === "base") ? "twist" : key;
+  renderDecisionForm();
+  if(action === "RAISE" && d.size_bb === null) $(key+"Size").focus();
 }
 
-function setPlan(key,plan){
-  const id=session.hands[currentIndex].id;
-  answers[id] ||= {};
-  answers[id][key] ||= {};
-  answers[id][key].plan=plan;
+function setSize(key,v){
+  const n = Number(v);
+  getAns(curHand().id,key).size_bb = (v === "" || isNaN(n)) ? null : n;
 }
 
-function renderDecisionFormPreserve(){
-  const id=session.hands[currentIndex].id;
-  const existing=answers[id]||{};
-  const baseSize=document.getElementById("baseSize")?.value;
-  const twistSize=document.getElementById("twistSize")?.value;
-  if(baseSize!==undefined){ existing.base ||= {}; existing.base.size_bb=baseSize===""?null:Number(baseSize); }
-  if(twistSize!==undefined){ existing.twist ||= {}; existing.twist.size_bb=twistSize===""?null:Number(twistSize); }
-  answers[id]=existing;
+function setPlan(key,plan,rerender){
+  getAns(curHand().id,key).plan = plan;
+  if(rerender){ activeKey = key; renderDecisionForm(); }
+}
+
+function setJam(key){
+  const h = curHand();
+  const stack = stackOf(h,key);
+  if(!stack) return;
+  const d = getAns(h.id,key);
+  d.action = "RAISE";
+  d.size_bb = stack;
+  activeKey = key;
   renderDecisionForm();
 }
 
-function captureForm(){
-  const h=session.hands[currentIndex];
-  answers[h.id] ||= {};
-  for(const key of ["base","twist"]){
-    answers[h.id][key] ||= {};
-    const size=document.getElementById(key+"Size").value;
-    const plan=document.getElementById(key+"Plan").value;
-    answers[h.id][key].size_bb=size===""?null:Number(size);
-    answers[h.id][key].plan=plan;
+function validateDecision(d, stack){
+  if(!d || !d.action) return "choose an action";
+  if(d.action === "RAISE"){
+    if(!(d.size_bb > 0)) return "enter a raise size";
+    if(stack && d.size_bb > stack) return `raise size cannot exceed the ${stack}BB stack`;
+    if(!d.plan) return "choose a plan (RF, RC, or RP)";
   }
+  return "";
 }
 
 function submitCurrentHand(){
-  captureForm();
-  const h=session.hands[currentIndex];
-  const a=answers[h.id];
+  const h = curHand();
   for(const key of ["base","twist"]){
-    if(!a[key]?.action){
-      showDecision("Choose an action for both Base and Twist.",true); return;
-    }
-    if(a[key].action==="RAISE" && !a[key].plan){
-      showDecision(`Please provide a plan (RF, RC, or RP) for the ${key} raise.`,true); return;
+    const err = validateDecision(answers[h.id]?.[key], stackOf(h,key));
+    if(err){
+      activeKey = key; setActive(key);
+      showDecision(`${key === "base" ? "Base" : "Twist"}: ${err}.`, true);
+      return;
     }
   }
-  if(currentIndex < session.hands.length-1){
-    currentIndex++;
-    renderHand();
-  }else{
-    finishSession();
-  }
+  leaveHand();
+  submitted.add(h.id);
+  updateProgress();
+  if(returnToReview){ returnToReview = false; showReview(); return; }
+  if(currentIndex < session.hands.length-1){ currentIndex++; renderHand(); }
+  else showReview();
 }
 
 function showDecision(msg,error){
-  const el=document.getElementById("decisionMessage");
-  el.textContent=msg;
-  el.className=error?"error":"success";
+  const el = $("decisionMessage");
+  el.textContent = msg;
+  el.className = error ? "error" : "success";
 }
 
 function previousHand(){
-  captureForm();
-  if(currentIndex>0){ currentIndex--; renderHand(); }
+  leaveHand();
+  if(currentIndex > 0) currentIndex--;
+  renderHand();
 }
 
 function resetCurrentDecision(){
-  const id=session.hands[currentIndex].id;
+  const id = curHand().id;
   delete answers[id];
+  submitted.delete(id);
+  updateProgress();
+  activeKey = "base";
   renderDecisionForm();
 }
 
-function finishSession(){
-  document.getElementById("trainerPanel").classList.add("hidden");
-  document.getElementById("completePanel").classList.remove("hidden");
+/* ---------- review ---------- */
+function answerText(d){
+  if(!d || !d.action) return "—";
+  if(d.action !== "RAISE") return d.action;
+  return `RAISE ${d.size_bb ?? "?"}BB${d.plan ? " ("+d.plan+")" : ""}`;
+}
+function handStatus(h){
+  const a = answers[h.id] || {};
+  const okB = !validateDecision(a.base, stackOf(h,"base"));
+  const okT = !validateDecision(a.twist, stackOf(h,"twist"));
+  if(okB && okT) return "complete";
+  return (a.base?.action || a.twist?.action) ? "partial" : "skipped";
+}
 
-  const results={
-    schema_version:"2.0",
-    result_type:"completed_session",
-    session:{
-      id:session.session.id,
-      completed_at:new Date().toISOString(),
-      hand_count:session.hands.length
+function showReview(){
+  leaveHand();
+  let incomplete = 0;
+  $("reviewBody").innerHTML = session.hands.map((h,i)=>{
+    const a = answers[h.id] || {};
+    const st = handStatus(h);
+    if(st !== "complete") incomplete++;
+    const label = {complete:'<span class="st-ok">✓ Answered</span>', partial:'<span class="st-part">Incomplete</span>', skipped:'<span class="st-skip">Skipped</span>'}[st];
+    return `<tr>
+      <td>${i+1} <span class="muted">(ID ${esc(h.id)})</span></td>
+      <td>${esc(h.base.hero.position)} ${esc(h.base.hero.cards.join(" "))}</td>
+      <td>${esc(answerText(a.base))}</td>
+      <td>${esc(answerText(a.twist))}</td>
+      <td>${label}</td>
+      <td><button class="small" onclick="editHand(${i})">Edit</button></td></tr>`;
+  }).join("");
+  $("reviewSummary").textContent = incomplete
+    ? `${incomplete} of ${session.hands.length} hands are not fully answered. Finishing now exports them as skipped (partial session).`
+    : `All ${session.hands.length} hands answered. Check them, then finish.`;
+  showPanel("reviewPanel");
+}
+
+function editHand(i){
+  currentIndex = i;
+  returnToReview = true;
+  showPanel("trainerPanel");
+  renderHand();
+}
+
+function resumeTrainer(){
+  returnToReview = false;
+  showPanel("trainerPanel");
+  renderHand();
+}
+
+/* ---------- results ---------- */
+function buildResults(){
+  let answered = 0;
+  const rows = session.hands.map(h=>{
+    const a = answers[h.id] || {};
+    const mk = key => {
+      const d = a[key], sc = h[key];
+      if(validateDecision(d, sc.effective_stack_bb)) return null;
+      const raise = d.action === "RAISE";
+      return {
+        action: d.action,
+        size_bb: raise ? d.size_bb : null,
+        plan: raise ? d.plan : "",
+        scenario: {
+          position: sc.hero.position,
+          cards: sc.hero.cards,
+          effective_stack_bb: sc.effective_stack_bb ?? null,
+          action: sc.action
+        }
+      };
+    };
+    const base = mk("base"), twist = mk("twist");
+    if(base && twist) answered++;
+    return { hand_id:h.id, base, twist, time_sec: Math.round((times[h.id] || 0) / 1000) };
+  });
+  return {
+    schema_version: "2.0",
+    app_version: APP_VERSION,
+    result_type: answered === session.hands.length ? "completed_session" : "partial_session",
+    session: {
+      id: session.session.id,
+      started_at: startedAt,
+      completed_at: new Date().toISOString(),
+      hand_count: session.hands.length,
+      answered_count: answered
     },
-    results:session.hands.map(h=>({
-      hand_id:h.id,
-      base:answers[h.id]?.base || null,
-      twist:answers[h.id]?.twist || null
-    }))
+    results: rows
   };
+}
 
-  document.getElementById("resultsOutput").value=JSON.stringify(results,null,2);
-  document.getElementById("completeSummary").textContent =
-    `${session.hands.length} hands completed. Copy the results JSON and paste it back into the AI for evaluation and Master State updates.`;
+function finishSession(){
+  leaveHand();
+  const results = buildResults();
+  showPanel("completePanel");
+  $("resultsOutput").value = JSON.stringify(results, null, 2);
+  $("copyMessage").textContent = "";
+  $("completeSummary").textContent = results.result_type === "completed_session"
+    ? `${session.hands.length} hands completed. Copy the results JSON and paste it back into the AI for evaluation and Master State updates.`
+    : `Partial session: ${results.session.answered_count} of ${session.hands.length} hands answered; the rest are marked skipped. Copy the results JSON and paste it back into the AI.`;
 }
 
 async function copyResults(){
-  const text=document.getElementById("resultsOutput").value;
+  const text = $("resultsOutput").value;
   try{
     await navigator.clipboard.writeText(text);
-    document.getElementById("copyMessage").textContent="Results JSON copied to clipboard.";
-    document.getElementById("copyMessage").className="success";
+    $("copyMessage").textContent = "Results JSON copied to clipboard.";
+    $("copyMessage").className = "success";
   }catch(e){
-    document.getElementById("copyMessage").textContent="Clipboard access failed. Select and copy the JSON manually.";
-    document.getElementById("copyMessage").className="error";
+    $("resultsOutput").select();
+    $("copyMessage").textContent = "Clipboard access failed. The text is selected: press Ctrl/Cmd+C to copy.";
+    $("copyMessage").className = "error";
   }
 }
 
 function downloadResults(){
-  const text=document.getElementById("resultsOutput").value;
-  const blob=new Blob([text],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=`poker-trainer-${session.session.id}-results.json`;
+  const blob = new Blob([$("resultsOutput").value], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `poker-trainer-${session.session.id}-results.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
 
+/* ---------- session lifecycle ---------- */
 function loadTestSession(){
-  document.getElementById("sessionInput").value=JSON.stringify(TEST_SESSION,null,2);
+  $("sessionInput").value = JSON.stringify(TEST_SESSION, null, 2);
   loadSession();
 }
 
-function startNewSession(){
-  session=null; currentIndex=0; answers={};
-  document.getElementById("completePanel").classList.add("hidden");
-  document.getElementById("trainerPanel").classList.add("hidden");
-  document.getElementById("importPanel").classList.remove("hidden");
+function startNewSession(confirmFirst){
+  if(confirmFirst && session && !confirm("Start a new session? Current answers will be discarded.")) return;
+  session = null; currentIndex = 0; answers = {}; submitted = new Set(); times = {};
+  handStartedAt = null; returnToReview = false;
+  showPanel("importPanel");
 }
 
 function clearAll(){
-  document.getElementById("sessionInput").value="";
-  document.getElementById("importMessage").textContent="";
-  startNewSession();
+  $("sessionInput").value = "";
+  $("importMessage").textContent = "";
+  startNewSession(false);
 }
+
+/* ---------- keyboard shortcuts ---------- */
+document.addEventListener("keydown", e=>{
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
+  if($("trainerPanel").classList.contains("hidden") || !session) return;
+  const tag = e.target.tagName;
+  if(tag === "TEXTAREA" || tag === "SELECT") return;
+  if(tag === "INPUT"){
+    if(e.key === "Enter"){ e.preventDefault(); submitCurrentHand(); }
+    return;
+  }
+  const k = e.key.toLowerCase();
+  if(tag === "BUTTON" && (k === "enter" || k === " ")) return;
+  const h = curHand();
+  const d = getAns(h.id, activeKey);
+  const handled = () => e.preventDefault();
+  if(k === "f"){ handled(); setAction(activeKey,"FOLD"); }
+  else if(k === "c"){ handled(); setAction(activeKey,"CALL"); }
+  else if(k === "r"){ handled(); setAction(activeKey,"RAISE"); }
+  else if(k === "j"){ handled(); setJam(activeKey); }
+  else if(k === "b"){ handled(); setActive("base"); }
+  else if(k === "t"){ handled(); setActive("twist"); }
+  else if(k === "1" || k === "2" || k === "3"){
+    if(d.action === "RAISE"){ handled(); setPlan(activeKey, PLANS[Number(k)-1][0], true); }
+  }
+  else if(k === "enter"){ handled(); submitCurrentHand(); }
+});
 </script>
 </body>
 </html>
