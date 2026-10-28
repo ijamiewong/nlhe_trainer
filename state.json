@@ -1,0 +1,1810 @@
+{
+ "state_version": "3.0",
+ "config": {
+  "active_session_id": "04",
+  "hand_pointer": 71,
+  "session_size": 10,
+  "min_answered": 5,
+  "next_focus": "Plan discipline: unsuited and weak hands are RF. Size OOP 3-bets and squeezes up (~4x OOP, add 1 open per caller). Re-test 150BB and 40BB spots."
+ },
+ "leaks": [
+  {
+   "id": "L1",
+   "name": "SB flatting trap: flat-calling opens OOP from the SB with implied-odds hands",
+   "severity": "High",
+   "status_seed": "Active",
+   "note": ""
+  },
+  {
+   "id": "L2",
+   "name": "Planning inversion: wrong RF/RC/RP (JJ/TT as RF or RP; unsuited and weak hands as RC)",
+   "severity": "High",
+   "status_seed": "Active",
+   "note": ""
+  },
+  {
+   "id": "L3",
+   "name": "Stack-depth inelasticity: no adjustment at 150BB, over-squeezing into 40BB stacks",
+   "severity": "Medium",
+   "status_seed": "Active",
+   "note": ""
+  },
+  {
+   "id": "L4",
+   "name": "BvB / positional sizing: 3B too large when BB has position over an SB open",
+   "severity": "Medium",
+   "status_seed": "Active",
+   "note": ""
+  },
+  {
+   "id": "L5",
+   "name": "Cold-calling a 3B OOP / folding blind defence vs a 4B",
+   "severity": "High",
+   "status_seed": "Active",
+   "note": ""
+  },
+  {
+   "id": "L6",
+   "name": "OOP 3-bet and squeeze sizing too small (ignores position and callers)",
+   "severity": "Medium",
+   "status_seed": "Watchlist",
+   "note": "Identified in S03 review; S02 H51 twist retagged."
+  },
+  {
+   "id": "L7",
+   "name": "ISO raise sizing too large over limpers",
+   "severity": "Low",
+   "status_seed": "Watchlist",
+   "note": "Identified in S03 review."
+  },
+  {
+   "id": "W1",
+   "name": "Too tight in early positions (KsQs UTG fold, 66 CO fold)",
+   "severity": "Low",
+   "status_seed": "Watchlist",
+   "note": "Seeded from Session 01 history, unconfirmed."
+  },
+  {
+   "id": "W2",
+   "name": "Multi-way flats with AQo",
+   "severity": "Low",
+   "status_seed": "Watchlist",
+   "note": "Seeded from Session 01 history, unconfirmed."
+  },
+  {
+   "id": "W3",
+   "name": "Flatting OOP from the SB with broadways",
+   "severity": "Low",
+   "status_seed": "Watchlist",
+   "note": "Seeded from Session 01 history, unconfirmed."
+  },
+  {
+   "id": "W4",
+   "name": "Offsuit open sizing (QcJd HJ 2.2BB)",
+   "severity": "Low",
+   "status_seed": "Watchlist",
+   "note": "Seeded from Session 01 history, unconfirmed."
+  }
+ ],
+ "cleared": [
+  "S02-H52-base",
+  "S02-H52-twist",
+  "S02-H54-base",
+  "S02-H54-twist",
+  "S02-H55-twist",
+  "S02-H56-base",
+  "S02-H60-base"
+ ],
+ "skipped": [],
+ "sessions": [
+  {
+   "id": "02",
+   "hand_range": [
+    51,
+    60
+   ],
+   "started_at": "2026-10-28T13:17:00Z",
+   "completed_at": null,
+   "hand_count": 10,
+   "answered": 10,
+   "time_sec": null,
+   "focus": "First tracked session (backfilled from combined labels)",
+   "backfilled": true
+  },
+  {
+   "id": "03",
+   "hand_range": [
+    61,
+    70
+   ],
+   "started_at": "2026-10-28T17:07:02.262Z",
+   "completed_at": "2026-10-28T17:15:18.558Z",
+   "hand_count": 10,
+   "answered": 10,
+   "time_sec": 492,
+   "focus": "Plans (RF vs RC), OOP/squeeze sizing, 150BB opens, ISO sizing",
+   "backfilled": false
+  }
+ ],
+ "decisions": [
+  {
+   "id": "S02-H51-base",
+   "session": "02",
+   "hand_id": 51,
+   "side": "base",
+   "position": "BTN",
+   "cards": [
+    "9c",
+    "8c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 6.6BB [RF]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Mixed strategy error: should be pure flat",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H51-twist",
+   "session": "02",
+   "hand_id": 51,
+   "side": "twist",
+   "position": "BTN",
+   "cards": [
+    "9c",
+    "8c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens, CO flats",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B Squeeze 8.8BB [RF]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "SQUEEZE_MULTIWAY",
+   "leaks": [
+    {
+     "id": "L6",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "MULTIWAY"
+   ],
+   "correct": "",
+   "note": "Sizing error: ~11BB or fold",
+   "next_test": "Squeeze vs open + caller: size 10-11BB IP or flat/fold with suited connectors",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H52-base",
+   "session": "02",
+   "hand_id": 52,
+   "side": "base",
+   "position": "SB",
+   "cards": [
+    "Ac",
+    "3c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "CO opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L1",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Flat OOP: should be 3B 9BB or fold",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H52-twist",
+   "session": "02",
+   "hand_id": 52,
+   "side": "twist",
+   "position": "SB",
+   "cards": [
+    "Ac",
+    "3c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN opens 3.5BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 0,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L1",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "ODD_SIZING"
+   ],
+   "correct": "",
+   "note": "Blunder: fold or 3B to ~11BB",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H53-base",
+   "session": "02",
+   "hand_id": 53,
+   "side": "base",
+   "position": "HJ",
+   "cards": [
+    "Qs",
+    "Js"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Folded to hero",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Open 2.5BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "OPEN",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Excellent",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H53-twist",
+   "session": "02",
+   "hand_id": 53,
+   "side": "twist",
+   "position": "HJ",
+   "cards": [
+    "Qs",
+    "Js"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "UTG opens 2.5BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 7.5BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [],
+   "twist_tags": [
+    "POSITION_SHIFT"
+   ],
+   "correct": "",
+   "note": "Sizing and planning overplay vs UTG range",
+   "next_test": "Suited broadway vs UTG open: flat IP or 3B bluff with RF",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H54-base",
+   "session": "02",
+   "hand_id": 54,
+   "side": "base",
+   "position": "UTG",
+   "cards": [
+    "Jc",
+    "Jd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Folded to hero",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Open 2.5BB [RP]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Plan: jamming isolates against better hands; should be RC",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H54-twist",
+   "session": "02",
+   "hand_id": 54,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "Jc",
+    "Jd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 6.6BB [RP]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "POSITION_SHIFT"
+   ],
+   "correct": "",
+   "note": "3B is great but 4B response is a call (RC)",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H55-base",
+   "session": "02",
+   "hand_id": 55,
+   "side": "base",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "Qs"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 6.6BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Unsuited broadways must be RF vs 4-bets",
+   "next_test": "Unsuited broadway 3B: always plan RF",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H55-twist",
+   "session": "02",
+   "hand_id": 55,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "Qs"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens, BTN 3-bets",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 0,
+   "spot": "VS_3B_4B",
+   "leaks": [
+    {
+     "id": "L5",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "COLD_3B_4B"
+   ],
+   "correct": "",
+   "note": "Major leak: cold-calling a 3B OOP",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H56-base",
+   "session": "02",
+   "hand_id": 56,
+   "side": "base",
+   "position": "BB",
+   "cards": [
+    "Kd",
+    "Qd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "SB opens 3BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 12BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "BVB",
+   "leaks": [
+    {
+     "id": "L4",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Sizing: IP leverage over SB allows ~9BB",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H56-twist",
+   "session": "02",
+   "hand_id": 56,
+   "side": "twist",
+   "position": "BB",
+   "cards": [
+    "Kd",
+    "Qd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "UTG opens, BTN flats",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "SQUEEZE_MULTIWAY",
+   "leaks": [],
+   "twist_tags": [
+    "MULTIWAY"
+   ],
+   "correct": "",
+   "note": "Excellent multi-way closing protection",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H57-base",
+   "session": "02",
+   "hand_id": 57,
+   "side": "base",
+   "position": "HJ",
+   "cards": [
+    "6s",
+    "5s"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Folded to hero",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Open 2.2BB [RF]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "OPEN",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Excellent",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H57-twist",
+   "session": "02",
+   "hand_id": 57,
+   "side": "twist",
+   "position": "SB",
+   "cards": [
+    "6s",
+    "5s"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "CO opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Fold",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_OPEN",
+   "leaks": [],
+   "twist_tags": [
+    "POSITION_SHIFT"
+   ],
+   "correct": "",
+   "note": "Excellent OOP fold discipline",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H58-base",
+   "session": "02",
+   "hand_id": 58,
+   "side": "base",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "Jc"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "UTG opens 2.5BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Fold",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_OPEN",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Excellent protective range fold",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H58-twist",
+   "session": "02",
+   "hand_id": 58,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "Jc"
+   ],
+   "stack_bb": 150,
+   "scenario_action": "Folded to hero, aggressive blinds",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Open 2BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 0,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": true
+    },
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "STACK_150"
+   ],
+   "correct": "",
+   "note": "Open bigger (~2.5BB) and plan RF",
+   "next_test": "150BB CO open ~2.5BB with plan RF vs 3-bettors",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H59-base",
+   "session": "02",
+   "hand_id": 59,
+   "side": "base",
+   "position": "BTN",
+   "cards": [
+    "Ks",
+    "Qs"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 6.6BB [RC]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_OPEN",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Excellent",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H59-twist",
+   "session": "02",
+   "hand_id": 59,
+   "side": "twist",
+   "position": "BTN",
+   "cards": [
+    "Ks",
+    "Qs"
+   ],
+   "stack_bb": 40,
+   "scenario_action": "HJ opens, CO flats, 40BB SB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 9BB [RF]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "SQUEEZE_MULTIWAY",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "STACK_40",
+    "MULTIWAY"
+   ],
+   "correct": "",
+   "note": "40BB stack traps you; should be pure flat",
+   "next_test": "40BB BTN suited broadway vs open + caller: flat or fold, no 3B",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H60-base",
+   "session": "02",
+   "hand_id": 60,
+   "side": "base",
+   "position": "SB",
+   "cards": [
+    "Tc",
+    "Td"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN opens 2.5BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "3B 10BB [RF]",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 50,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Planning error: TT cannot be raise-folded vs a BTN steal range",
+   "next_test": "",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S02-H60-twist",
+   "session": "02",
+   "hand_id": 60,
+   "side": "twist",
+   "position": "SB",
+   "cards": [
+    "Tc",
+    "Td"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN 4-bets to 23BB",
+   "action": null,
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Fold",
+   "labels": {
+    "action": null,
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": null,
+    "s": null,
+    "p": null
+   },
+   "score": 0,
+   "spot": "VS_3B_4B",
+   "leaks": [
+    {
+     "id": "L5",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "COLD_3B_4B"
+   ],
+   "correct": "",
+   "note": "Blunder: under-defending premium pairs from the SB",
+   "next_test": "SB pair vs BTN 4B: call/5B jam, not fold",
+   "time_sec": null,
+   "legacy": true
+  },
+  {
+   "id": "S03-H61-base",
+   "session": "03",
+   "hand_id": 61,
+   "side": "base",
+   "position": "SB",
+   "cards": [
+    "Ad",
+    "4d"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB, CO folds, BTN folds",
+   "action": "RAISE",
+   "size_bb": 6.6,
+   "plan": "RF",
+   "normalised": false,
+   "played": "3B 6.6BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Sub-optimal",
+    "plan": "Excellent"
+   },
+   "scores": {
+    "a": 100,
+    "s": 50,
+    "p": 100
+   },
+   "score": 83.33333333333333,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L1",
+     "hit": false
+    },
+    {
+     "id": "L2",
+     "hit": false
+    },
+    {
+     "id": "L6",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "3B ~10-11BB, RF",
+   "note": "3B with A4s is right and RF is right; 6.6BB is too small OOP.",
+   "next_test": "SB 3B vs open: size ~4x+ OOP",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H61-twist",
+   "session": "03",
+   "hand_id": 61,
+   "side": "twist",
+   "position": "SB",
+   "cards": [
+    "Ad",
+    "4d"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN opens 3.5BB",
+   "action": "FOLD",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Fold",
+   "labels": {
+    "action": "Good",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 80,
+    "s": null,
+    "p": null
+   },
+   "score": 80,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L1",
+     "hit": false
+    }
+   ],
+   "twist_tags": [
+    "ODD_SIZING"
+   ],
+   "correct": "",
+   "note": "Fold vs an oversized BTN open is fine; 3B ~13BB also viable.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H62-base",
+   "session": "03",
+   "hand_id": 62,
+   "side": "base",
+   "position": "SB",
+   "cards": [
+    "Qc",
+    "Qd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN opens 2.5BB",
+   "action": "RAISE",
+   "size_bb": 9,
+   "plan": "RC",
+   "normalised": false,
+   "played": "3B 9BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Good",
+    "plan": "Excellent"
+   },
+   "scores": {
+    "a": 100,
+    "s": 80,
+    "p": 100
+   },
+   "score": 93.33333333333333,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L1",
+     "hit": false
+    },
+    {
+     "id": "L2",
+     "hit": false
+    }
+   ],
+   "twist_tags": [],
+   "correct": "3B ~10-11BB, RC",
+   "note": "Correct value 3B and RC with QQ; slightly small OOP.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H62-twist",
+   "session": "03",
+   "hand_id": 62,
+   "side": "twist",
+   "position": "SB",
+   "cards": [
+    "Qc",
+    "Qd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "CO opens 2.2BB, BTN 3-bets to 7BB",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": "Good",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 80,
+    "s": null,
+    "p": null
+   },
+   "score": 80,
+   "spot": "VS_3B_4B",
+   "leaks": [
+    {
+     "id": "L5",
+     "hit": false
+    }
+   ],
+   "twist_tags": [
+    "COLD_3B_4B"
+   ],
+   "correct": "",
+   "note": "Call is fine in the SB with QQ; a 4B for value is also strong.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H63-base",
+   "session": "03",
+   "hand_id": 63,
+   "side": "base",
+   "position": "BTN",
+   "cards": [
+    "Ad",
+    "Qc"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB, CO folds",
+   "action": "RAISE",
+   "size_bb": 6.6,
+   "plan": "RC",
+   "normalised": false,
+   "played": "3B 6.6BB",
+   "labels": {
+    "action": "Good",
+    "sizing": "Excellent",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 80,
+    "s": 100,
+    "p": 50
+   },
+   "score": 76.66666666666667,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Call or 3B 6.6BB, plan RF",
+   "note": "AQo 3B IP is a mixed spot (call is the main line); plan must be RF for an unsuited hand.",
+   "next_test": "Unsuited broadway 3B: always plan RF",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H63-twist",
+   "session": "03",
+   "hand_id": 63,
+   "side": "twist",
+   "position": "BTN",
+   "cards": [
+    "Ad",
+    "Qc"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB, CO 3-bets to 7BB",
+   "action": "FOLD",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Fold",
+   "labels": {
+    "action": "Excellent",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 100,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_3B_4B",
+   "leaks": [
+    {
+     "id": "L5",
+     "hit": false
+    }
+   ],
+   "twist_tags": [
+    "COLD_3B_4B"
+   ],
+   "correct": "",
+   "note": "Fold vs a CO 3B behind a HJ open is the primary line; leak L5 handled well.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H64-base",
+   "session": "03",
+   "hand_id": 64,
+   "side": "base",
+   "position": "CO",
+   "cards": [
+    "Ac",
+    "Jh"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Folded to hero",
+   "action": "RAISE",
+   "size_bb": 2,
+   "plan": "RC",
+   "normalised": false,
+   "played": "Open 2BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Excellent",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 100,
+    "s": 100,
+    "p": 50
+   },
+   "score": 83.33333333333333,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Open 2-2.2BB, RF",
+   "note": "Correct open; AJo should plan RF vs 3-bets.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H64-twist",
+   "session": "03",
+   "hand_id": 64,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "Ac",
+    "Jh"
+   ],
+   "stack_bb": 150,
+   "scenario_action": "Folded to hero, aggressive blinds who 3-bet often",
+   "action": "RAISE",
+   "size_bb": 2,
+   "plan": "RC",
+   "normalised": false,
+   "played": "Open 2BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Sub-optimal",
+    "plan": "Blunder"
+   },
+   "scores": {
+    "a": 100,
+    "s": 50,
+    "p": 0
+   },
+   "score": 50,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": true
+    },
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "STACK_150"
+   ],
+   "correct": "Open ~2.5BB, RF",
+   "note": "Same error as S02 H58: at 150BB open ~2.5BB and plan RF vs aggressive 3-bettors.",
+   "next_test": "150BB CO open ~2.5BB with plan RF vs 3-bettors",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H65-base",
+   "session": "03",
+   "hand_id": 65,
+   "side": "base",
+   "position": "BTN",
+   "cards": [
+    "Kd",
+    "Jd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "HJ opens 2.2BB, CO calls",
+   "action": "RAISE",
+   "size_bb": 6.6,
+   "plan": "RC",
+   "normalised": false,
+   "played": "3B Squeeze 6.6BB",
+   "labels": {
+    "action": "Sub-optimal",
+    "sizing": "Sub-optimal",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 50,
+    "s": 50,
+    "p": 50
+   },
+   "score": 50,
+   "spot": "SQUEEZE_MULTIWAY",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    },
+    {
+     "id": "L6",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Flat, or squeeze ~10-11BB with RF",
+   "note": "Squeeze sized like a single raise; KJs is mostly a flat IP here and the plan should be RF.",
+   "next_test": "Squeeze vs open + caller: size ~10-11BB IP, KJs often flat, plan RF",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H65-twist",
+   "session": "03",
+   "hand_id": 65,
+   "side": "twist",
+   "position": "BTN",
+   "cards": [
+    "Kd",
+    "Jd"
+   ],
+   "stack_bb": 40,
+   "scenario_action": "HJ opens 2.2BB, CO calls",
+   "action": "RAISE",
+   "size_bb": 8.8,
+   "plan": "RC",
+   "normalised": false,
+   "played": "3B Squeeze 8.8BB",
+   "labels": {
+    "action": "Sub-optimal",
+    "sizing": "Sub-optimal",
+    "plan": "Blunder"
+   },
+   "scores": {
+    "a": 50,
+    "s": 50,
+    "p": 0
+   },
+   "score": 33.333333333333336,
+   "spot": "SQUEEZE_MULTIWAY",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": true
+    },
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "STACK_40"
+   ],
+   "correct": "Flat",
+   "note": "At 40BB calling a 4B with KJs is a big error; flat was correct.",
+   "next_test": "40BB stack: flat or fold KJs vs open + caller; never RC",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H66-base",
+   "session": "03",
+   "hand_id": 66,
+   "side": "base",
+   "position": "BB",
+   "cards": [
+    "Qs",
+    "9s"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "SB opens 3BB",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": "Excellent",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 100,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "BVB",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "Q9s call BB vs SB open is right.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H66-twist",
+   "session": "03",
+   "hand_id": 66,
+   "side": "twist",
+   "position": "BB",
+   "cards": [
+    "Qs",
+    "9s"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "SB limps",
+   "action": "RAISE",
+   "size_bb": 7,
+   "plan": "RC",
+   "normalised": false,
+   "played": "Raise 7BB",
+   "labels": {
+    "action": "Good",
+    "sizing": "Sub-optimal",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 80,
+    "s": 50,
+    "p": 50
+   },
+   "score": 60,
+   "spot": "ISO_LIMP",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    },
+    {
+     "id": "L7",
+     "hit": true
+    }
+   ],
+   "twist_tags": [
+    "ISO_LIMP"
+   ],
+   "correct": "Raise ~4-5BB, RF",
+   "note": "Raising vs an SB limp is fine; 7BB is too big and the plan should be RF.",
+   "next_test": "BB iso-raise vs SB limp: ~4-5BB with Q9s, plan RF",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H67-base",
+   "session": "03",
+   "hand_id": 67,
+   "side": "base",
+   "position": "BTN",
+   "cards": [
+    "8h",
+    "7h"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "UTG limps, HJ folds, CO folds",
+   "action": "RAISE",
+   "size_bb": 6.6,
+   "plan": "RF",
+   "normalised": false,
+   "played": "Raise 6.6BB",
+   "labels": {
+    "action": "Good",
+    "sizing": "Sub-optimal",
+    "plan": "Excellent"
+   },
+   "scores": {
+    "a": 80,
+    "s": 50,
+    "p": 100
+   },
+   "score": 76.66666666666667,
+   "spot": "ISO_LIMP",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": false
+    },
+    {
+     "id": "L7",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Raise ~4.5BB, RF",
+   "note": "ISO IP is good; 6.6BB is too big over one limper.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H67-twist",
+   "session": "03",
+   "hand_id": 67,
+   "side": "twist",
+   "position": "BTN",
+   "cards": [
+    "8h",
+    "7h"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "UTG limps, HJ limps, CO folds",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call (overlimp)",
+   "labels": {
+    "action": "Good",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 80,
+    "s": null,
+    "p": null
+   },
+   "score": 80,
+   "spot": "ISO_LIMP",
+   "leaks": [],
+   "twist_tags": [
+    "ISO_LIMP"
+   ],
+   "correct": "",
+   "note": "Overlimping 87s IP vs two limpers is fine; raising is also fine.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H68-base",
+   "session": "03",
+   "hand_id": 68,
+   "side": "base",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "9c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Folded to hero",
+   "action": "RAISE",
+   "size_bb": 2,
+   "plan": "RC",
+   "normalised": false,
+   "played": "Open 2BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Excellent",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 100,
+    "s": 100,
+    "p": 50
+   },
+   "score": 83.33333333333333,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Open 2-2.2BB, RF",
+   "note": "A9o is a CO open; weak offsuit ace plans RF.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H68-twist",
+   "session": "03",
+   "hand_id": 68,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "Ad",
+    "9c"
+   ],
+   "stack_bb": 15,
+   "scenario_action": "Folded to hero",
+   "action": "RAISE",
+   "size_bb": 15,
+   "plan": "RP",
+   "normalised": false,
+   "played": "Jam 15BB",
+   "labels": {
+    "action": "Excellent",
+    "sizing": "Excellent",
+    "plan": "Excellent"
+   },
+   "scores": {
+    "a": 100,
+    "s": 100,
+    "p": 100
+   },
+   "score": 100,
+   "spot": "OPEN",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": false
+    }
+   ],
+   "twist_tags": [
+    "STACK_LT20",
+    "JAM_DECISION"
+   ],
+   "correct": "",
+   "note": "A9o is a clear open-jam from the CO at 15BB.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H69-base",
+   "session": "03",
+   "hand_id": 69,
+   "side": "base",
+   "position": "BB",
+   "cards": [
+    "7h",
+    "7c"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "BTN opens 2.5BB, SB folds",
+   "action": "RAISE",
+   "size_bb": 9,
+   "plan": "RC",
+   "normalised": false,
+   "played": "3B 9BB",
+   "labels": {
+    "action": "Good",
+    "sizing": "Good",
+    "plan": "Sub-optimal"
+   },
+   "scores": {
+    "a": 80,
+    "s": 80,
+    "p": 50
+   },
+   "score": 70,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L2",
+     "hit": true
+    }
+   ],
+   "twist_tags": [],
+   "correct": "Call (or 3B ~10-11BB, RF)",
+   "note": "77 vs BTN is mainly a call; 3B is a mix and a 3B bluff plan is RF.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H69-twist",
+   "session": "03",
+   "hand_id": 69,
+   "side": "twist",
+   "position": "BB",
+   "cards": [
+    "7h",
+    "7c"
+   ],
+   "stack_bb": 12,
+   "scenario_action": "BTN shoves 12BB, SB folds",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": true,
+   "played": "Call all-in",
+   "labels": {
+    "action": "Excellent",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 100,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_OPEN",
+   "leaks": [
+    {
+     "id": "L3",
+     "hit": false
+    }
+   ],
+   "twist_tags": [
+    "STACK_LT20",
+    "JAM_DECISION"
+   ],
+   "correct": "",
+   "note": "Calling a 12BB shove with 77 is correct (recorded as a raise; treated as a call).",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H70-base",
+   "session": "03",
+   "hand_id": 70,
+   "side": "base",
+   "position": "CO",
+   "cards": [
+    "As",
+    "Kd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Hero opens 2.5BB from CO, BTN 3-bets to 8BB, blinds fold",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call",
+   "labels": {
+    "action": "Good",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 80,
+    "s": null,
+    "p": null
+   },
+   "score": 80,
+   "spot": "VS_3B_4B",
+   "leaks": [],
+   "twist_tags": [],
+   "correct": "",
+   "note": "AKo vs a BTN 3B: call is fine; 4B is the mixed alternative.",
+   "next_test": "",
+   "time_sec": null
+  },
+  {
+   "id": "S03-H70-twist",
+   "session": "03",
+   "hand_id": 70,
+   "side": "twist",
+   "position": "CO",
+   "cards": [
+    "As",
+    "Kd"
+   ],
+   "stack_bb": 100,
+   "scenario_action": "Hero opens 2.5BB from CO, BTN 3-bets to 8BB, hero 4-bets to 19BB, BTN shoves 100BB",
+   "action": "CALL",
+   "size_bb": null,
+   "plan": "",
+   "normalised": false,
+   "played": "Call all-in",
+   "labels": {
+    "action": "Excellent",
+    "sizing": null,
+    "plan": null
+   },
+   "scores": {
+    "a": 100,
+    "s": null,
+    "p": null
+   },
+   "score": 100,
+   "spot": "VS_3B_4B",
+   "leaks": [],
+   "twist_tags": [
+    "JAM_DECISION"
+   ],
+   "correct": "",
+   "note": "AKo calls the jam.",
+   "next_test": "",
+   "time_sec": null
+  }
+ ]
+}
