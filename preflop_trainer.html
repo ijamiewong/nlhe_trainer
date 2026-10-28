@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NLHE Pre-Flop Trainer v2</title>
+<style>
+  :root { font-family: Arial, sans-serif; color-scheme: dark; }
+  body { margin:0; background:#101216; color:#f1f3f5; }
+  .wrap { max-width:1050px; margin:0 auto; padding:24px; }
+  h1,h2,h3 { margin-top:0; }
+  .panel { background:#191d24; border:1px solid #303642; border-radius:12px; padding:20px; margin-bottom:18px; }
+  textarea { width:100%; min-height:220px; box-sizing:border-box; background:#0d1015; color:#e9edf2; border:1px solid #3a414e; border-radius:8px; padding:12px; font-family:monospace; resize:vertical; }
+  button { border:1px solid #46505e; background:#252b35; color:#fff; padding:10px 16px; border-radius:7px; cursor:pointer; font-weight:600; }
+  button:hover { background:#303744; }
+  button.primary { background:#315f9e; border-color:#4678bb; }
+  button.danger { background:#71363b; border-color:#9c4a51; }
+  button.action.selected { outline:3px solid #74a9ff; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .scenario-row { display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); gap:18px; align-items:stretch; }
+  .scenario-row + .scenario-row { margin-top:18px; }
+  .scenario { min-width:0; }
+  .cards { display:flex; gap:10px; margin:14px 0; }
+  .card { width:58px; height:76px; background:#f7f7f7; color:#151515; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; box-shadow:0 2px 5px #0005; }
+  .card .suit { margin-left:3px; }
+  .card.spades { color:#111820; }
+  .card.hearts { color:#d83242; }
+  .card.clubs { color:#168447; }
+  .card.diamonds { color:#2674df; }
+  .decision-block { display:flex; flex-direction:column; gap:12px; }
+  .decision-block .row { align-items:center; }
+  .decision-block .action-buttons { display:flex; gap:8px; flex-wrap:wrap; }
+  .scenario { border:1px solid #363d49; border-radius:10px; padding:16px; }
+  .scenario h3 { margin-bottom:8px; }
+  .muted { color:#aeb6c2; }
+  .status { padding:10px 12px; border-radius:8px; background:#12161c; border:1px solid #303642; }
+  input, select { background:#0d1015; color:#fff; border:1px solid #3a414e; border-radius:6px; padding:9px; }
+  .hidden { display:none !important; }
+  pre { white-space:pre-wrap; word-break:break-word; background:#0d1015; padding:14px; border-radius:8px; max-height:420px; overflow:auto; }
+  .progress { height:8px; background:#292f38; border-radius:99px; overflow:hidden; margin:12px 0 20px; }
+  .bar { height:100%; width:0; background:#4e87d1; }
+  .error { color:#ff9b9b; }
+  .success { color:#9be0ad; }
+  label { font-weight:600; }
+  .field { display:flex; flex-direction:column; gap:6px; min-width:120px; }
+  @media(max-width:760px){ .grid{grid-template-columns:1fr;} .scenario-row{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NLHE Pre-Flop Trainer <span class="muted">v2.0</span></h1>
+
+  <section id="importPanel" class="panel">
+    <h2>1. Load Session</h2>
+    <p class="muted">Paste the AI-generated session JSON below. The browser does not need internet access.</p>
+    <textarea id="sessionInput" placeholder='Paste session JSON here...'></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="loadSession()">Load Session</button>
+      <button onclick="loadTestSession()">Load Test Session</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+    <div id="importMessage" style="margin-top:12px"></div>
+  </section>
+
+  <section id="trainerPanel" class="hidden">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 id="sessionTitle">Session</h2>
+          <div id="sessionMeta" class="muted"></div>
+        </div>
+        <div id="handCounter" class="status"></div>
+      </div>
+      <div class="progress"><div id="progressBar" class="bar"></div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Hand Scenarios & Decisions</h2>
+      <div class="scenario-row">
+        <div id="baseScenario" class="scenario"></div>
+        <div id="baseDecision" class="scenario decision-block"></div>
+      </div>
+      <div class="scenario-row">
+        <div id="twistScenario" class="scenario"></div>
+        <div id="twistDecision" class="scenario decision-block"></div>
+      </div>
+      <div class="row" style="margin-top:18px; justify-content:space-between">
+        <button onclick="previousHand()">← Previous</button>
+        <div class="row">
+          <button class="danger" onclick="resetCurrentDecision()">Reset</button>
+          <button class="primary" onclick="submitCurrentHand()">Submit Hand →</button>
+        </div>
+      </div>
+      <div id="decisionMessage" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section id="completePanel" class="panel hidden">
+    <h2>Session Complete</h2>
+    <p id="completeSummary"></p>
+    <textarea id="resultsOutput" style="min-height:300px"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="copyResults()">Copy Results JSON</button>
+      <button onclick="downloadResults()">Download Results JSON</button>
+      <button onclick="startNewSession()">New Session</button>
+    </div>
+    <div id="copyMessage" style="margin-top:12px"></div>
+  </section>
+</div>
+
+<script>
+let session = null;
+let currentIndex = 0;
+let answers = {};
+
+const TEST_SESSION = {
+  "schema_version":"2.0",
+  "session":{
+    "id":"TEST-01",
+    "generated_at":"2026-10-28T14:00:00Z",
+    "hand_count":3,
+    "mode":"preflop"
+  },
+  "hands":[
+    {
+      "id":61,
+      "base":{
+        "hero":{"position":"BTN","cards":["9c","8c"]},
+        "effective_stack_bb":100,
+        "action":"HJ opens 2.2BB"
+      },
+      "twist":{
+        "hero":{"position":"BTN","cards":["9c","8c"]},
+        "effective_stack_bb":100,
+        "action":"HJ opens 2.2BB, CO calls"
+      }
+    },
+    {
+      "id":62,
+      "base":{
+        "hero":{"position":"SB","cards":["Ac","3c"]},
+        "effective_stack_bb":100,
+        "action":"CO opens 2.2BB, BTN folds"
+      },
+      "twist":{
+        "hero":{"position":"SB","cards":["Ac","3c"]},
+        "effective_stack_bb":100,
+        "action":"BTN opens 3.5BB"
+      }
+    },
+    {
+      "id":63,
+      "base":{
+        "hero":{"position":"BB","cards":["Kd","Qd"]},
+        "effective_stack_bb":100,
+        "action":"SB opens 3BB"
+      },
+      "twist":{
+        "hero":{"position":"BB","cards":["Kd","Qd"]},
+        "effective_stack_bb":100,
+        "action":"UTG opens 2.5BB, BTN calls"
+      }
+    }
+  ]
+};
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function cardHtml(cards){
+  if(!cards || !cards.length) return "";
+  const suits = {
+    s: { symbol: "♠", name: "spades" },
+    h: { symbol: "♥", name: "hearts" },
+    c: { symbol: "♣", name: "clubs" },
+    d: { symbol: "♦", name: "diamonds" }
+  };
+  return `<div class="cards">${cards.map(c=>{
+    const code = String(c);
+    const rank = code.slice(0, -1).toUpperCase();
+    const suit = suits[code.slice(-1).toLowerCase()];
+    if(!suit) return `<div class="card">${esc(code)}</div>`;
+    return `<div class="card ${suit.name}"><span>${esc(rank)}</span><span class="suit">${suit.symbol}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function renderScenario(name, data){
+  return `
+    <h3>${esc(name)}</h3>
+    <div><strong>Hero:</strong> ${esc(data.hero?.position || "")}</div>
+    ${cardHtml(data.hero?.cards)}
+    <div><strong>Effective stack:</strong> ${esc(data.effective_stack_bb ?? "—")} BB</div>
+    <p>${esc(data.action || "")}</p>
+  `;
+}
+
+function loadSession(){
+  const raw = document.getElementById("sessionInput").value.trim();
+  if(!raw){ showImport("Paste some JSON first.", true); return; }
+  try{
+    const parsed = JSON.parse(raw);
+    validateSession(parsed);
+    session = parsed;
+    currentIndex = 0;
+    answers = {};
+    document.getElementById("completePanel").classList.add("hidden");
+    document.getElementById("trainerPanel").classList.remove("hidden");
+    renderHand();
+    showImport("Session loaded successfully.", false);
+  }catch(e){
+    showImport("Invalid session JSON: " + e.message, true);
+  }
+}
+
+function validateSession(s){
+  if(!s || typeof s !== "object") throw new Error("Session must be an object.");
+  if(!s.schema_version) throw new Error("Missing schema_version.");
+  if(!s.session || !s.session.id) throw new Error("Missing session.id.");
+  if(!Array.isArray(s.hands) || !s.hands.length) throw new Error("No hands found.");
+  s.hands.forEach((h,i)=>{
+    if(h.id === undefined) throw new Error(`Hand ${i+1} is missing id.`);
+    if(!h.base || !h.twist) throw new Error(`Hand ${h.id} needs base and twist.`);
+    if(!h.base.hero || !h.twist.hero) throw new Error(`Hand ${h.id} needs hero data.`);
+  });
+}
+
+function showImport(msg,error){
+  const el=document.getElementById("importMessage");
+  el.textContent=msg;
+  el.className=error?"error":"success";
+}
+
+function renderHand(){
+  const h=session.hands[currentIndex];
+  document.getElementById("sessionTitle").textContent =
+    `Session ${session.session.id}`;
+  document.getElementById("sessionMeta").textContent =
+    `${session.hands.length} hands • ${session.session.mode || "preflop"} • schema ${session.schema_version}`;
+  document.getElementById("handCounter").textContent =
+    `Hand ${currentIndex+1} / ${session.hands.length} • ID ${h.id}`;
+  document.getElementById("progressBar").style.width =
+    `${((currentIndex)/session.hands.length)*100}%`;
+
+  document.getElementById("baseScenario").innerHTML=renderScenario("BASE SCENARIO",h.base);
+  document.getElementById("twistScenario").innerHTML=renderScenario("WHAT IF? TWIST",h.twist);
+  renderDecisionForm();
+}
+
+function renderDecisionForm(){
+  const h=session.hands[currentIndex];
+  const saved=answers[h.id] || {};
+  document.getElementById("baseDecision").innerHTML=decisionBlock("base","Base Decision",saved.base);
+  document.getElementById("twistDecision").innerHTML=decisionBlock("twist","Twist Decision",saved.twist);
+  document.getElementById("decisionMessage").textContent="";
+}
+
+function decisionBlock(key,title,data={}){
+  const action=data.action || "";
+  const plan=data.plan || "";
+  return `
+    <h3>${title}</h3>
+    <div class="action-buttons">
+      ${["FOLD","CALL","RAISE"].map(a=>
+        `<button class="action ${action===a?"selected":""}" onclick="setAction('${key}','${a}')">${a}</button>`
+      ).join("")}
+    </div>
+    <div class="row" style="margin-top:4px">
+      <div class="field">
+        <label>Raise size (BB)</label>
+        <input id="${key}Size" type="number" step="0.1" min="0" value="${esc(data.size_bb ?? "")}" placeholder="e.g. 6.6">
+      </div>
+      <div class="field">
+        <label>Plan</label>
+        <select id="${key}Plan" onchange="setPlan('${key}',this.value)">
+          <option value="">— none —</option>
+          <option value="RF" ${plan==="RF"?"selected":""}>RF — Raise to Fold</option>
+          <option value="RC" ${plan==="RC"?"selected":""}>RC — Raise to Call</option>
+          <option value="RP" ${plan==="RP"?"selected":""}>RP — Raise to Push / 5B Jam</option>
+        </select>
+      </div>
+    </div>
+  `;
+}
+
+function setAction(key,action){
+  const id=session.hands[currentIndex].id;
+  answers[id] ||= {};
+  answers[id][key] ||= {};
+  answers[id][key].action=action;
+  renderDecisionFormPreserve();
+}
+
+function setPlan(key,plan){
+  const id=session.hands[currentIndex].id;
+  answers[id] ||= {};
+  answers[id][key] ||= {};
+  answers[id][key].plan=plan;
+}
+
+function renderDecisionFormPreserve(){
+  const id=session.hands[currentIndex].id;
+  const existing=answers[id]||{};
+  const baseSize=document.getElementById("baseSize")?.value;
+  const twistSize=document.getElementById("twistSize")?.value;
+  if(baseSize!==undefined){ existing.base ||= {}; existing.base.size_bb=baseSize===""?null:Number(baseSize); }
+  if(twistSize!==undefined){ existing.twist ||= {}; existing.twist.size_bb=twistSize===""?null:Number(twistSize); }
+  answers[id]=existing;
+  renderDecisionForm();
+}
+
+function captureForm(){
+  const h=session.hands[currentIndex];
+  answers[h.id] ||= {};
+  for(const key of ["base","twist"]){
+    answers[h.id][key] ||= {};
+    const size=document.getElementById(key+"Size").value;
+    const plan=document.getElementById(key+"Plan").value;
+    answers[h.id][key].size_bb=size===""?null:Number(size);
+    answers[h.id][key].plan=plan;
+  }
+}
+
+function submitCurrentHand(){
+  captureForm();
+  const h=session.hands[currentIndex];
+  const a=answers[h.id];
+  for(const key of ["base","twist"]){
+    if(!a[key]?.action){
+      showDecision("Choose an action for both Base and Twist.",true); return;
+    }
+    if(a[key].action==="RAISE" && !a[key].plan){
+      showDecision(`Please provide a plan (RF, RC, or RP) for the ${key} raise.`,true); return;
+    }
+  }
+  if(currentIndex < session.hands.length-1){
+    currentIndex++;
+    renderHand();
+  }else{
+    finishSession();
+  }
+}
+
+function showDecision(msg,error){
+  const el=document.getElementById("decisionMessage");
+  el.textContent=msg;
+  el.className=error?"error":"success";
+}
+
+function previousHand(){
+  captureForm();
+  if(currentIndex>0){ currentIndex--; renderHand(); }
+}
+
+function resetCurrentDecision(){
+  const id=session.hands[currentIndex].id;
+  delete answers[id];
+  renderDecisionForm();
+}
+
+function finishSession(){
+  document.getElementById("trainerPanel").classList.add("hidden");
+  document.getElementById("completePanel").classList.remove("hidden");
+
+  const results={
+    schema_version:"2.0",
+    result_type:"completed_session",
+    session:{
+      id:session.session.id,
+      completed_at:new Date().toISOString(),
+      hand_count:session.hands.length
+    },
+    results:session.hands.map(h=>({
+      hand_id:h.id,
+      base:answers[h.id]?.base || null,
+      twist:answers[h.id]?.twist || null
+    }))
+  };
+
+  document.getElementById("resultsOutput").value=JSON.stringify(results,null,2);
+  document.getElementById("completeSummary").textContent =
+    `${session.hands.length} hands completed. Copy the results JSON and paste it back into the AI for evaluation and Master State updates.`;
+}
+
+async function copyResults(){
+  const text=document.getElementById("resultsOutput").value;
+  try{
+    await navigator.clipboard.writeText(text);
+    document.getElementById("copyMessage").textContent="Results JSON copied to clipboard.";
+    document.getElementById("copyMessage").className="success";
+  }catch(e){
+    document.getElementById("copyMessage").textContent="Clipboard access failed. Select and copy the JSON manually.";
+    document.getElementById("copyMessage").className="error";
+  }
+}
+
+function downloadResults(){
+  const text=document.getElementById("resultsOutput").value;
+  const blob=new Blob([text],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`poker-trainer-${session.session.id}-results.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadTestSession(){
+  document.getElementById("sessionInput").value=JSON.stringify(TEST_SESSION,null,2);
+  loadSession();
+}
+
+function startNewSession(){
+  session=null; currentIndex=0; answers={};
+  document.getElementById("completePanel").classList.add("hidden");
+  document.getElementById("trainerPanel").classList.add("hidden");
+  document.getElementById("importPanel").classList.remove("hidden");
+}
+
+function clearAll(){
+  document.getElementById("sessionInput").value="";
+  document.getElementById("importMessage").textContent="";
+  startNewSession();
+}
+</script>
+</body>
+</html>
