@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NLHE Pre-Flop Trainer v2.1</title>
+<title>NLHE Pre-Flop Trainer v2.2</title>
 <style>
   :root { font-family: Arial, sans-serif; color-scheme: dark; }
   body { margin:0; background:#101216; color:#f1f3f5; }
@@ -65,12 +65,18 @@
   .ring .seat.dim { opacity:.45; }
   .ring text { fill:#f1f3f5; font-size:11px; text-anchor:middle; dominant-baseline:central; font-family:Arial,sans-serif; }
   .ring text.lbl { fill:#ffd479; font-size:10px; }
+  .allin-note { font-size:14px; color:#ffd479; margin:4px 0 0; }
+  table.eng { width:100%; border-collapse:collapse; font-size:13px; margin:8px 0 16px; }
+  table.eng th, table.eng td { text-align:left; padding:6px 8px; border-bottom:1px solid #303642; vertical-align:top; }
+  table.eng th { color:#aeb6c2; font-weight:600; }
+  .errbox { border:1px solid #9c4a51; background:#2a1517; border-radius:8px; padding:10px 14px; margin:10px 0; }
+  .okbox { border:1px solid #2f7a4a; background:#12241a; border-radius:8px; padding:10px 14px; margin:10px 0; }
   @media(max-width:760px){ .scenario-row{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>NLHE Pre-Flop Trainer <span class="muted">v2.1</span></h1>
+  <h1>NLHE Pre-Flop Trainer <span class="muted">v2.2</span></h1>
 
   <section id="importPanel" class="panel">
     <h2>1. Load Session</h2>
@@ -80,6 +86,7 @@
       <button class="primary" onclick="loadSession()">Load Session</button>
       <button onclick="loadTestSession()">Load Test Session</button>
       <button onclick="clearAll()">Clear</button>
+      <button onclick="openEngine(false)">Coach Engine: commit an evaluated session →</button>
     </div>
     <div id="importMessage" style="margin-top:12px" aria-live="polite"></div>
   </section>
@@ -135,6 +142,31 @@
     </div>
   </section>
 
+  <section id="enginePanel" class="panel hidden">
+    <h2>Coach Engine: commit an evaluated session</h2>
+    <p class="muted">Load your current <b>state.json</b> and <b>ledger.md</b>, paste the trainer's Results JSON and the AI's Evaluation JSON, then preview. Commit prepares updated <b>state.json</b>, <b>state.md</b> and <b>ledger.md</b> for download. All scoring, grids, leaks and the hand pointer are computed here, not by the AI.</p>
+    <div class="row">
+      <div class="field"><label for="stateFile">state.json</label><input type="file" id="stateFile" accept=".json,application/json"></div>
+      <div class="field"><label for="ledgerFile">ledger.md</label><input type="file" id="ledgerFile" accept=".md,text/markdown,text/plain"></div>
+    </div>
+    <div id="engineFiles" class="muted" style="margin:8px 0" aria-live="polite"></div>
+    <label for="engResults">Results JSON (from the trainer)</label>
+    <textarea id="engResults" style="min-height:120px" placeholder="Paste results JSON..."></textarea>
+    <label for="engEval" style="display:block;margin-top:12px">Evaluation JSON (from the AI coach)</label>
+    <textarea id="engEval" style="min-height:120px" placeholder="Paste evaluation JSON..."></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="enginePreview()">Preview</button>
+      <button onclick="engineCommit()">Commit &amp; prepare downloads</button>
+      <button onclick="showPanel('importPanel')">← Back</button>
+    </div>
+    <div id="enginePreview" aria-live="polite"></div>
+    <div id="engineDownloads" class="row hidden" style="margin-top:12px">
+      <button class="primary" onclick="dlEngine('state.json')">Download state.json</button>
+      <button class="primary" onclick="dlEngine('state.md')">Download state.md</button>
+      <button class="primary" onclick="dlEngine('ledger.md')">Download ledger.md</button>
+    </div>
+  </section>
+
   <section id="completePanel" class="panel hidden">
     <h2>Session Complete</h2>
     <p id="completeSummary"></p>
@@ -143,6 +175,7 @@
       <button class="primary" onclick="copyResults()">Copy Results JSON</button>
       <button onclick="downloadResults()">Download Results JSON</button>
       <button onclick="showReview()">← Back to review</button>
+      <button onclick="openEngine(true)">Next: commit AI evaluation →</button>
       <button onclick="startNewSession(true)">New Session</button>
     </div>
     <div id="copyMessage" style="margin-top:12px" aria-live="polite"></div>
@@ -150,7 +183,7 @@
 </div>
 
 <script>
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 const POSITIONS = ["UTG","HJ","CO","BTN","SB","BB"];
 const PLANS = [["RF","RF — Raise to Fold"],["RC","RC — Raise to Call"],["RP","RP — Raise to Push / 5B Jam"]];
 
@@ -163,6 +196,7 @@ let handStartedAt = null;
 let startedAt = null;
 let activeKey = "base";
 let returnToReview = false;
+let lastResultsText = "";
 
 const TEST_SESSION = {
   "schema_version":"2.0",
@@ -195,6 +229,12 @@ function getAns(id,key){
   return answers[id][key];
 }
 function stackOf(h,key){ return h[key].effective_stack_bb; }
+
+// True when a villain has already jammed, so hero can only fold or call.
+function facingAllIn(actionText){
+  return String(actionText || "").split(/[,;]/).some(cl =>
+    !/^\s*hero\b/i.test(cl) && /\b(shoves?|jams?|all-?in)\b/i.test(cl));
+}
 
 function normCard(c){
   const m = /^(10|[2-9TJQKA])([shdc])$/i.exec(String(c).trim());
@@ -346,7 +386,7 @@ function showImport(msg,error){
 }
 
 function showPanel(name){
-  ["importPanel","trainerPanel","reviewPanel","completePanel"].forEach(p=>$(p).classList.toggle("hidden", p !== name));
+  ["importPanel","trainerPanel","reviewPanel","completePanel","enginePanel"].forEach(p=>$(p).classList.toggle("hidden", p !== name));
 }
 
 /* ---------- time tracking ---------- */
@@ -369,7 +409,7 @@ function renderHand(){
   $("twistScenario").innerHTML = renderScenario("WHAT IF? TWIST", h.twist, h.base);
   $("submitBtn").textContent = (currentIndex === session.hands.length-1 || returnToReview) ? "Submit & Review →" : "Submit Hand →";
   const a = answers[h.id] || {};
-  activeKey = validateDecision(a.base, stackOf(h,"base")) ? "base" : (validateDecision(a.twist, stackOf(h,"twist")) ? "twist" : "base");
+  activeKey = validateDecision(a.base, h.base) ? "base" : (validateDecision(a.twist, h.twist) ? "twist" : "base");
   renderDecisionForm();
   handStartedAt = Date.now();
 }
@@ -386,7 +426,7 @@ function renderDecisionForm(){
     const el = $(key + "Decision");
     el.className = "scenario decision-block" + (activeKey === key ? " active-block" : "");
     el.onclick = () => setActive(key);
-    el.innerHTML = decisionBlock(key, key === "base" ? "Base Decision" : "Twist Decision", getAns(h.id,key), stackOf(h,key));
+    el.innerHTML = decisionBlock(key, key === "base" ? "Base Decision" : "Twist Decision", getAns(h.id,key), stackOf(h,key), facingAllIn(h[key].action));
   });
   $("decisionMessage").textContent = "";
 }
@@ -397,9 +437,17 @@ function setActive(key){
   $("twistDecision").classList.toggle("active-block", key === "twist");
 }
 
-function decisionBlock(key,title,d,stack){
+function decisionBlock(key,title,d,stack,allIn){
   const isRaise = d.action === "RAISE";
   const dis = isRaise ? "" : "disabled";
+  if(allIn) return `
+    <h3>${title}</h3>
+    <div class="action-buttons">
+      ${["FOLD","CALL"].map(a=>
+        `<button type="button" class="action ${d.action===a?"selected":""}" aria-pressed="${d.action===a}" onclick="setAction('${key}','${a}')">${d.action===a?"✓ ":""}${a}<kbd>${a[0]}</kbd></button>`
+      ).join("")}
+    </div>
+    <p class="allin-note">Facing an all-in: fold or call.</p>`;
   return `
     <h3>${title}</h3>
     <div class="action-buttons">
@@ -425,6 +473,7 @@ function decisionBlock(key,title,d,stack){
 }
 
 function setAction(key,action){
+  if(action === "RAISE" && facingAllIn(curHand()[key].action)) return;
   const d = getAns(curHand().id,key);
   d.action = action;
   if(action !== "RAISE"){ d.size_bb = null; d.plan = ""; }
@@ -446,7 +495,7 @@ function setPlan(key,plan,rerender){
 function setJam(key){
   const h = curHand();
   const stack = stackOf(h,key);
-  if(!stack) return;
+  if(!stack || facingAllIn(h[key].action)) return;
   const d = getAns(h.id,key);
   d.action = "RAISE";
   d.size_bb = stack;
@@ -454,9 +503,11 @@ function setJam(key){
   renderDecisionForm();
 }
 
-function validateDecision(d, stack){
+function validateDecision(d, sc){
+  const stack = sc.effective_stack_bb;
   if(!d || !d.action) return "choose an action";
   if(d.action === "RAISE"){
+    if(facingAllIn(sc.action)) return "you are facing an all-in: choose FOLD or CALL";
     if(!(d.size_bb > 0)) return "enter a raise size";
     if(stack && d.size_bb > stack) return `raise size cannot exceed the ${stack}BB stack`;
     if(!d.plan) return "choose a plan (RF, RC, or RP)";
@@ -467,7 +518,7 @@ function validateDecision(d, stack){
 function submitCurrentHand(){
   const h = curHand();
   for(const key of ["base","twist"]){
-    const err = validateDecision(answers[h.id]?.[key], stackOf(h,key));
+    const err = validateDecision(answers[h.id]?.[key], h[key]);
     if(err){
       activeKey = key; setActive(key);
       showDecision(`${key === "base" ? "Base" : "Twist"}: ${err}.`, true);
@@ -511,8 +562,8 @@ function answerText(d){
 }
 function handStatus(h){
   const a = answers[h.id] || {};
-  const okB = !validateDecision(a.base, stackOf(h,"base"));
-  const okT = !validateDecision(a.twist, stackOf(h,"twist"));
+  const okB = !validateDecision(a.base, h.base);
+  const okT = !validateDecision(a.twist, h.twist);
   if(okB && okT) return "complete";
   return (a.base?.action || a.twist?.action) ? "partial" : "skipped";
 }
@@ -559,7 +610,7 @@ function buildResults(){
     const a = answers[h.id] || {};
     const mk = key => {
       const d = a[key], sc = h[key];
-      if(validateDecision(d, sc.effective_stack_bb)) return null;
+      if(validateDecision(d, sc)) return null;
       const raise = d.action === "RAISE";
       return {
         action: d.action,
@@ -597,6 +648,7 @@ function finishSession(){
   const results = buildResults();
   showPanel("completePanel");
   $("resultsOutput").value = JSON.stringify(results, null, 2);
+  lastResultsText = $("resultsOutput").value;
   $("copyMessage").textContent = "";
   $("completeSummary").textContent = results.result_type === "completed_session"
     ? `${session.hands.length} hands completed. Copy the results JSON and paste it back into the AI for evaluation and Master State updates.`
@@ -642,7 +694,7 @@ function clearAll(){
   $("sessionInput").value = "";
   $("importMessage").textContent = "";
   startNewSession(false);
-} 
+}
 
 /* ---------- keyboard shortcuts ---------- */
 document.addEventListener("keydown", e=>{
@@ -670,6 +722,306 @@ document.addEventListener("keydown", e=>{
   }
   else if(k === "enter"){ handled(); submitCurrentHand(); }
 });
+
+/* ================= COACH ENGINE ================= */
+/* Deterministic scoring, aggregation and state/ledger generation. The AI only supplies
+   per-decision labels (Excellent / Good / Sub-optimal / Blunder); everything else is computed here. */
+const ENGINE = (() => {
+  const LABEL_PTS = { "Excellent":100, "Good":80, "Sub-optimal":50, "Blunder":0 };
+  const SPOTS = ["OPEN","VS_OPEN","SQUEEZE_MULTIWAY","VS_3B_4B","BVB","ISO_LIMP"];
+  const SPOT_NAMES = { OPEN:"Open (folded to)", VS_OPEN:"Facing an open", SQUEEZE_MULTIWAY:"Squeeze / multi-way", VS_3B_4B:"Facing a 3B / 4B", BVB:"Blind vs Blind", ISO_LIMP:"Vs limpers (ISO)" };
+  const TAGS = ["POSITION_SHIFT","MULTIWAY","ISO_LIMP","ODD_SIZING","COLD_3B_4B","STACK_40","STACK_150","STACK_LT20","JAM_DECISION"];
+  const CLASSES = ["Premium Pairs","Medium Pairs","Low Pairs","Suited Aces","Suited Broadways","Offsuit Broadways","Suited Connectors / Gappers","Other Suited","Other Offsuit"];
+  const CLASS_HANDS = {
+    "Premium Pairs":"AA-TT", "Medium Pairs":"99-77", "Low Pairs":"66-22", "Suited Aces":"A2s-A9s",
+    "Suited Broadways":"AKs-JTs", "Offsuit Broadways":"AKo-JTo", "Suited Connectors / Gappers":"suited, gap <= 2 (e.g. T9s, 87s, Q9s)",
+    "Other Suited":"remaining suited (K9s-, Q8s- ...)", "Other Offsuit":"remaining offsuit (A9o-, K9o- ...)" };
+  const POS_ORDER = ["UTG","HJ","CO","BTN","SB","BB"];
+  const STACKS = ["<20BB (MTT zone)","Short (20-60BB)","Standard (60-125BB)","Deep (>125BB)"];
+  const MIN_N = 10, QUEUE_MAX = 12, QUEUE_CUTOFF = 70, PROMOTE_AT = 3, RESOLVE_AT = 10;
+  const RANKS = "23456789TJQKA";
+  const pad2 = n => String(n).padStart(2,"0");
+  const round = x => Math.round(x);
+
+  function bandLabel(score){ return score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 40 ? "Sub-optimal" : "Blunder"; }
+  function handClass(cards){
+    let ra = RANKS.indexOf(cards[0][0]), rb = RANKS.indexOf(cards[1][0]);
+    const suited = cards[0][1] === cards[1][1];
+    if(ra < rb) [ra, rb] = [rb, ra];
+    if(ra === rb) return ra >= RANKS.indexOf("T") ? "Premium Pairs" : ra >= RANKS.indexOf("7") ? "Medium Pairs" : "Low Pairs";
+    const broadway = rb >= RANKS.indexOf("T");
+    if(suited){
+      if(broadway) return "Suited Broadways";
+      if(ra === 12) return "Suited Aces";
+      if(ra - rb <= 3) return "Suited Connectors / Gappers";
+      return "Other Suited";
+    }
+    return broadway ? "Offsuit Broadways" : "Other Offsuit";
+  }
+  function stackBucket(bb){ return bb < 20 ? STACKS[0] : bb < 60 ? STACKS[1] : bb <= 125 ? STACKS[2] : STACKS[3]; }
+  function status(n, score){ return n < MIN_N ? "⚪ Provisional" : score >= 80 ? "🟢" : score >= 60 ? "🟡" : "🔴"; }
+  const scoreTxt = s => s === null || s === undefined ? "—" : String(round(s));
+
+  // Hero RAISE >= stack over a villain jam is really a call.
+  function normalise(d, sc){
+    if(d.action === "RAISE" && facingAllIn(sc.action) && sc.effective_stack_bb && d.size_bb >= sc.effective_stack_bb)
+      return { action:"CALL", size_bb:null, plan:"", normalised:true };
+    return { action:d.action, size_bb:d.size_bb, plan:d.plan, normalised:false };
+  }
+
+  /* ---------- derivations (always recomputed from raw decisions) ---------- */
+  function sortedDecisions(state){
+    return state.decisions.slice().sort((x,y)=> x.session.localeCompare(y.session) || x.hand_id - y.hand_id || (x.side === "base" ? 0 : 1) - (y.side === "base" ? 0 : 1))
+      .map(d => ({ ...d, hand_class: handClass(d.cards), stack_bucket: stackBucket(d.stack_bb) }));
+  }
+  function aggregate(ds, keyFn, order){
+    const m = new Map(order.map(k => [k, { sum:0, n:0 }]));
+    ds.forEach(d => { const k = keyFn(d); if(!m.has(k)) m.set(k, { sum:0, n:0 }); const o = m.get(k); o.sum += d.score; o.n++; });
+    return [...m].map(([key,o]) => ({ key, n:o.n, score:o.n ? o.sum / o.n : null }));
+  }
+  function deriveLeaks(state, ds){
+    return state.leaks.map(L => {
+      let opp = 0, fail = 0, streak = 0, first = null, last = null; const ev = [];
+      ds.forEach(d => (d.leaks || []).filter(t => t.id === L.id).forEach(t => {
+        opp++; const ref = `S${d.session} H${d.hand_id} ${d.side}`;
+        if(t.hit){ fail++; streak = 0; if(!first) first = ref; last = ref; ev.push(ref); } else streak++;
+      }));
+      let st = L.status_seed === "Watchlist" ? (fail >= PROMOTE_AT ? "Active" : "Watchlist") : "Active";
+      if(fail > 0 && streak >= RESOLVE_AT) st = "Resolved";
+      return { ...L, opportunities:opp, failures:fail, streak, first_seen:first, last_seen:last, evidence:ev.slice(-4), status:st };
+    });
+  }
+  function deriveQueue(state, ds){
+    const cleared = new Set(state.cleared || []);
+    const items = ds.filter(d => d.score < QUEUE_CUTOFF && !cleared.has(d.id)).map(d => ({
+      id:d.id, source:`S${d.session} H${d.hand_id} ${d.side}`, score:d.score,
+      spot:`${d.position} ${d.cards.join("")}: ${d.scenario_action}`, next:d.next_test || d.correct || d.note || "", _s:d.session, _h:d.hand_id }));
+    (state.skipped || []).forEach(k => {
+      const id = `S${k.session}-H${k.hand_id}-skipped`;
+      if(!cleared.has(id)) items.push({ id, source:`S${k.session} H${k.hand_id} (skipped)`, score:55, spot:`Hand ${k.hand_id}`, next:"Skipped last time: re-deal a close variant", _s:k.session, _h:k.hand_id });
+    });
+    items.sort((a,b) => a.score - b.score || b._s.localeCompare(a._s) || b._h - a._h);
+    return items.slice(0, QUEUE_MAX);
+  }
+  function deriveCoverage(ds, lastSession){
+    return TAGS.map(t => { let total = 0, last = 0;
+      ds.forEach(d => { if(d.side === "twist" && (d.twist_tags || []).includes(t)){ total++; if(d.session === lastSession) last++; } });
+      return { tag:t, total, last }; });
+  }
+  function deriveSessions(state, ds){
+    return state.sessions.map(se => {
+      const m = ds.filter(d => d.session === se.id); const c = { "Excellent":0, "Good":0, "Sub-optimal":0, "Blunder":0 };
+      m.forEach(d => c[bandLabel(d.score)]++);
+      return { ...se, decisions:m.length, avg:m.length ? m.reduce((a,d) => a + d.score, 0) / m.length : null, counts:c };
+    });
+  }
+  function derive(state){
+    const ds = sortedDecisions(state);
+    const lastSession = state.sessions.length ? state.sessions[state.sessions.length - 1].id : null;
+    return {
+      ds, sessions:deriveSessions(state, ds), leaks:deriveLeaks(state, ds), queue:deriveQueue(state, ds), coverage:deriveCoverage(ds, lastSession),
+      classGrid:aggregate(ds, d => d.hand_class, CLASSES), posGrid:aggregate(ds, d => d.position, POS_ORDER),
+      spotGrid:aggregate(ds, d => d.spot, SPOTS), stackGrid:aggregate(ds, d => d.stack_bucket, STACKS)
+    };
+  }
+
+  /* ---------- markdown rendering ---------- */
+  const tbl = (h, rows) => [`| ${h.join(" | ")} |`, `| ${h.map(() => ":---").join(" | ")} |`, ...rows.map(r => `| ${r.join(" | ")} |`)].join("\n");
+  function gridRows(g, nameFn, extra){ return g.map(r => [nameFn ? nameFn(r.key) : r.key, ...(extra ? [extra(r.key)] : []), scoreTxt(r.score), r.n, status(r.n, r.score)]); }
+  function fmtTime(sec){ return sec ? `${Math.floor(sec / 60)}m${String(sec % 60).padStart(2,"0")}s` : "—"; }
+
+  function renderStateMd(state){
+    const D = derive(state), c = state.config, L = [];
+    L.push("# NLHE PRE-FLOP TRAINER — STATE");
+    L.push(`*Generated by the Coach Engine (state version ${state.state_version}). **Do not hand-edit.** Paste this with \`rules.md\` into the AI chat. The history archive is \`ledger.md\` (not needed in chat). Score = 0–100 from the rubric in rules.md; status colours need n ≥ ${MIN_N} decisions.*`);
+    L.push("", "## Config");
+    L.push(`- **Active Session ID:** ${c.active_session_id}`, `- **Current Hand Pointer:** ${c.hand_pointer}`, `- **Session Size:** ${c.session_size} hands`, `- **Min answered hands to commit a session:** ${c.min_answered}`);
+    if(c.next_focus) L.push(`- **Suggested focus for next session:** ${c.next_focus}`);
+    L.push("", "## Session Summary", tbl(["Session","Hands","Decisions","Avg","Excellent","Good","Sub-opt","Blunder","Time","Focus"],
+      D.sessions.map(s => [s.id, `${s.hand_range[0]}–${s.hand_range[1]}`, s.decisions, scoreTxt(s.avg), s.counts.Excellent, s.counts.Good, s.counts["Sub-optimal"], s.counts.Blunder, fmtTime(s.time_sec), s.focus || ""])));
+    L.push("", "## Global Range Grid", tbl(["Hand Category","Hands","Score","n","Status"], gridRows(D.classGrid, k => `**${k}**`, k => CLASS_HANDS[k])));
+    L.push("", "## Position Grid", tbl(["Position","Score","n","Status"], gridRows(D.posGrid)));
+    L.push("", "## Spot-Type Grid", tbl(["Spot Type","Score","n","Status"], gridRows(D.spotGrid, k => SPOT_NAMES[k])));
+    L.push("", "## Stack-Depth Grid", tbl(["Stack","Score","n","Status"], gridRows(D.stackGrid)));
+    const lk = st => D.leaks.filter(l => l.status === st);
+    const lkRows = a => a.map(l => [l.id, `**${l.name}**`, l.severity, l.first_seen || "—", l.last_seen || "—", `${l.failures} / ${l.opportunities}`, l.streak, l.evidence.join(", ") || "—"]);
+    const lkHead = ["#","Leak","Severity","First seen","Last seen","Fails / Opps","Streak","Recent evidence"];
+    L.push("", "## Active Leaks", lk("Active").length ? tbl(lkHead, lkRows(lk("Active"))) : "*None.*");
+    L.push("", `### Watchlist (promoted to Active at ${PROMOTE_AT} failures)`, lk("Watchlist").length ? tbl(lkHead, lkRows(lk("Watchlist"))) : "*None.*");
+    L.push("", `### Resolved (${RESOLVE_AT} good opportunities in a row)`, lk("Resolved").length ? tbl(lkHead, lkRows(lk("Resolved"))) : "*None yet.*");
+    L.push("", "## Re-deal Queue", `*Decisions scored under ${QUEUE_CUTOFF} that have not been cleared (max ${QUEUE_MAX}, lowest score first). Deal a close variant, not the identical spot.*`,
+      D.queue.length ? tbl(["Source","Score","Original spot","What to test next"], D.queue.map(q => [q.source, scoreTxt(q.score), q.spot, q.next])) : "*Empty.*");
+    L.push("", "## Coverage Tracker (twist types)", tbl(["Twist type","Last session","Total","Gap?"],
+      D.coverage.map(x => [x.tag, x.last, x.total, x.total === 0 ? "❗ Not seen" : x.total < 3 ? "Light" : ""])));
+    L.push("", "## Leak & Tag Reference", `Leak ids in use: ${state.leaks.map(l => l.id).join(", ")}. Spot types: ${SPOTS.join(", ")}. Twist tags: ${TAGS.join(", ")}.`);
+    return L.join("\n") + "\n";
+  }
+
+  function playedText(d, e){
+    if(e.played) return e.played;
+    if(d.action === "RAISE") return `Raise ${d.size_bb}BB`;
+    return d.action === "FOLD" ? "Fold" : "Call" + (d.normalised ? " (all-in)" : "");
+  }
+  function ledgerBlock(sess, rows, decisions){
+    const t = sess.started_at ? new Date(sess.started_at) : null;
+    const when = t ? `${t.getUTCFullYear()}-${pad2(t.getUTCMonth()+1)}-${pad2(t.getUTCDate())} ${pad2(t.getUTCHours())}:${pad2(t.getUTCMinutes())} UTC` : "unknown time";
+    const ds = decisions.filter(d => d.session === sess.id);
+    const avg = ds.length ? ds.reduce((a,d) => a + d.score, 0) / ds.length : 0;
+    const out = [`### ⏱️ Session ${sess.id} | ${when} | Hands ${sess.hand_range[0]}–${sess.hand_range[1]} | Avg score ${round(avg)} | Time ${fmtTime(sess.time_sec)}`];
+    rows.forEach(r => {
+      const base = ds.find(d => d.hand_id === r.hand_id && d.side === "base"), tw = ds.find(d => d.hand_id === r.hand_id && d.side === "twist");
+      const any = base || tw;
+      out.push(`*   **Hand ${pad2(r.hand_id)}:** ${any ? any.position + " | " + any.cards.join("") : "—"} | ⏱ ${r.time_sec || 0}s`);
+      [["Base", base, r.base], ["Twist", tw, r.twist]].forEach(([nm, d, raw]) => {
+        if(!d){ out.push(`    - *${nm}:* Skipped`); return; }
+        const sc = d.scores;
+        const labels = d.labels;
+        const comp = d.action === "RAISE" ? `A: ${labels.action} · S: ${labels.sizing} · P: ${labels.plan}` : `A: ${labels.action}`;
+        out.push(`    - *${nm} (${d.scenario_action}):* ${d.played}${d.action === "RAISE" && d.plan ? ` [Plan: ${d.plan}]` : ""} [${comp} → ${round(d.score)}]${d.note ? " " + d.note : ""}`);
+      });
+    });
+    return out.join("\n") + "\n";
+  }
+
+  /* ---------- the commit pipeline ---------- */
+  function run(state, ledgerMd, results, ev){
+    const errors = [], E = m => errors.push(m);
+    if(!state || state.state_version !== "3.0") E("state.json is missing or not state_version 3.0.");
+    if(!results || !results.session || !Array.isArray(results.results)) E("Results JSON is invalid (needs session and results).");
+    if(!ev || !Array.isArray(ev.evaluations)) E("Evaluation JSON is invalid (needs an evaluations array).");
+    if(errors.length) return { errors };
+    const sid = String(results.session.id), cfg = state.config;
+    if(String(ev.session_id) !== sid) E(`Evaluation is for session ${ev.session_id} but results are for session ${sid}.`);
+    if(state.sessions.some(s => s.id === sid)) E(`Session ${sid} is already committed.`);
+    else if(sid !== cfg.active_session_id) E(`Results are for session ${sid} but the state expects session ${cfg.active_session_id}.`);
+    const answered = results.session.answered_count;
+    if(answered < cfg.min_answered) E(`Only ${answered} hands fully answered; at least ${cfg.min_answered} are needed to commit. Discard this session and leave state unchanged.`);
+    const ids = results.results.map(r => r.hand_id);
+    if(ids[0] !== cfg.hand_pointer) E(`First hand id is ${ids[0]} but the hand pointer is ${cfg.hand_pointer}.`);
+    if(ids.some((id,i) => id !== ids[0] + i)) E("Hand ids are not sequential.");
+
+    const knownLeaks = new Set(state.leaks.map(l => l.id));
+    const newLeaks = Array.isArray(ev.new_leaks) ? ev.new_leaks : [];
+    newLeaks.forEach(n => {
+      if(!n.id || !n.name || !n.severity) E(`new_leaks entry needs id, name and severity: ${JSON.stringify(n)}`);
+      else if(knownLeaks.has(n.id)) E(`new_leaks id ${n.id} already exists.`);
+      else knownLeaks.add(n.id);
+    });
+    const evById = new Map(ev.evaluations.map(e => [e.hand_id, e]));
+    const newDecisions = [], newSkipped = [];
+    results.results.forEach(r => {
+      let skip = false;
+      ["base","twist"].forEach(side => {
+        const d = r[side];
+        if(!d){ skip = true; return; }
+        const tag = `Hand ${r.hand_id} ${side}`, e = evById.get(r.hand_id) && evById.get(r.hand_id)[side];
+        if(!e){ E(`${tag}: no evaluation supplied.`); return; }
+        const nd = normalise(d, d.scenario);
+        if(!(e.action in LABEL_PTS)) E(`${tag}: action label "${e.action}" is not one of ${Object.keys(LABEL_PTS).join(", ")}.`);
+        if(nd.action === "RAISE"){
+          if(!(e.sizing in LABEL_PTS)) E(`${tag}: raise needs a valid sizing label.`);
+          if(!(e.plan in LABEL_PTS)) E(`${tag}: raise needs a valid plan label.`);
+        }
+        if(!SPOTS.includes(e.spot)) E(`${tag}: spot "${e.spot}" is not one of ${SPOTS.join(", ")}.`);
+        (e.twist_tags || []).forEach(t => { if(!TAGS.includes(t)) E(`${tag}: unknown twist tag "${t}".`); });
+        (e.leaks || []).forEach(l => { if(!knownLeaks.has(l.id)) E(`${tag}: unknown leak id "${l.id}".`); });
+        if(errors.length) return;
+        const comps = [LABEL_PTS[e.action]]; let s = null, p = null;
+        if(nd.action === "RAISE"){ s = LABEL_PTS[e.sizing]; p = LABEL_PTS[e.plan]; comps.push(s, p); }
+        const score = comps.reduce((a,b) => a + b, 0) / comps.length;
+        newDecisions.push({
+          id:`S${sid}-H${r.hand_id}-${side}`, session:sid, hand_id:r.hand_id, side,
+          position:d.scenario.position, cards:d.scenario.cards, stack_bb:d.scenario.effective_stack_bb, scenario_action:d.scenario.action,
+          action:nd.action, size_bb:nd.size_bb, plan:nd.plan, normalised:nd.normalised,
+          played:playedText(nd, e), labels:{ action:e.action, sizing:nd.action === "RAISE" ? e.sizing : null, plan:nd.action === "RAISE" ? e.plan : null },
+          scores:{ a:comps[0], s, p }, score, spot:e.spot, leaks:e.leaks || [], twist_tags:side === "twist" ? (e.twist_tags || []) : [],
+          correct:e.correct || "", note:e.note || "", next_test:e.next_test || "", time_sec:null
+        });
+      });
+      if(skip) newSkipped.push({ session:sid, hand_id:r.hand_id });
+    });
+    if(errors.length) return { errors };
+
+    const before = derive(state);
+    const next = JSON.parse(JSON.stringify(state));
+    next.decisions.push(...newDecisions);
+    next.skipped.push(...newSkipped);
+    newLeaks.forEach(n => next.leaks.push({ id:n.id, name:n.name, severity:n.severity, status_seed:"Watchlist", note:n.note || "" }));
+    next.cleared = [...new Set([...(next.cleared || []), ...(ev.queue_cleared || [])])];
+    const first = ids[0], last = ids[ids.length - 1];
+    next.sessions.push({ id:sid, hand_range:[first, last], started_at:results.session.started_at, completed_at:results.session.completed_at,
+      hand_count:results.session.hand_count, answered, time_sec:results.results.reduce((a,r) => a + (r.time_sec || 0), 0), focus:ev.session_focus || "", backfilled:false });
+    next.config.hand_pointer = last + 1;
+    next.config.active_session_id = pad2(Number(sid) + 1);
+    next.config.next_focus = ev.next_focus || "";
+    const after = derive(next);
+    const sess = next.sessions[next.sessions.length - 1];
+    const ledgerOut = (ledgerMd.endsWith("\n") ? ledgerMd : ledgerMd + "\n") + "\n" + ledgerBlock(sess, results.results, after.ds.filter(d => d.session === sid));
+    const stateJson = JSON.stringify(next, null, 1) + "\n";
+    return { errors:[], next, stateJson, stateMd:renderStateMd(next), ledgerMd:ledgerOut,
+             preview:{ sess:after.sessions.find(s => s.id === sid), decisions:after.ds.filter(d => d.session === sid), leaksBefore:before.leaks, leaksAfter:after.leaks, queue:after.queue, config:next.config, skipped:newSkipped } };
+  }
+  return { run, derive, renderStateMd, handClass, stackBucket, bandLabel, LABEL_PTS, SPOTS, TAGS };
+})();
+
+/* ---------- engine UI ---------- */
+let engineState = null, engineLedger = null, engineOut = null;
+
+function openEngine(prefill){
+  if(prefill && lastResultsText) $("engResults").value = lastResultsText;
+  showPanel("enginePanel");
+}
+function readFileInto(inputId, cb){
+  const f = $(inputId).files[0]; if(!f) return;
+  const r = new FileReader(); r.onload = () => cb(String(r.result)); r.readAsText(f);
+}
+function engineFileStatus(){
+  $("engineFiles").textContent =
+    `state.json: ${engineState ? "loaded (next session " + engineState.config.active_session_id + ", pointer " + engineState.config.hand_pointer + ")" : "not loaded"} • ledger.md: ${engineLedger !== null ? "loaded" : "not loaded"}`;
+}
+$("stateFile").addEventListener("change", () => readFileInto("stateFile", t => { try{ engineState = JSON.parse(t); }catch(e){ engineState = null; $("enginePreview").innerHTML = `<div class="errbox">state.json is not valid JSON.</div>`; } engineFileStatus(); }));
+$("ledgerFile").addEventListener("change", () => readFileInto("ledgerFile", t => { engineLedger = t; engineFileStatus(); }));
+
+function engineParse(){
+  const errs = [];
+  if(!engineState) errs.push("Load state.json first.");
+  if(engineLedger === null) errs.push("Load ledger.md first.");
+  let results = null, ev = null;
+  try{ results = JSON.parse(extractJson($("engResults").value)); }catch(e){ errs.push("Results JSON: " + e.message); }
+  try{ ev = JSON.parse(extractJson($("engEval").value)); }catch(e){ errs.push("Evaluation JSON: " + e.message); }
+  return { errs, results, ev };
+}
+function enginePreview(){
+  const { errs, results, ev } = engineParse();
+  engineOut = null; $("engineDownloads").classList.add("hidden");
+  const box = $("enginePreview");
+  if(errs.length){ box.innerHTML = `<div class="errbox">${errs.map(esc).join("<br>")}</div>`; return; }
+  const out = ENGINE.run(engineState, engineLedger, results, ev);
+  if(out.errors.length){ box.innerHTML = `<div class="errbox"><b>Cannot commit:</b><br>${out.errors.map(esc).join("<br>")}</div>`; return; }
+  engineOut = out;
+  const p = out.preview, sc = x => x === null || x === undefined ? "—" : Math.round(x);
+  const rows = p.decisions.map(d => `<tr><td>${d.hand_id} ${d.side}</td><td>${esc(d.position)} ${esc(d.cards.join(""))}</td><td>${esc(d.played)}${d.plan ? " (" + esc(d.plan) + ")" : ""}</td>
+    <td>${esc(d.labels.action)}${d.labels.sizing ? " / " + esc(d.labels.sizing) : ""}${d.labels.plan ? " / " + esc(d.labels.plan) : ""}</td><td><b>${sc(d.score)}</b></td><td>${esc(d.note)}${d.correct ? "<br><span class='muted'>Better: " + esc(d.correct) + "</span>" : ""}</td></tr>`).join("");
+  const leakRows = p.leaksAfter.map((l,i) => { const b = p.leaksBefore[i];
+    return `<tr><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${b ? b.status : "new"} → ${l.status}</td><td>${b ? b.failures + "/" + b.opportunities : "—"} → ${l.failures}/${l.opportunities}</td></tr>`; }).join("");
+  box.innerHTML = `<div class="okbox">Session ${esc(p.sess.id)}: average <b>${sc(p.sess.avg)}</b> over ${p.sess.decisions} decisions (Excellent ${p.sess.counts.Excellent}, Good ${p.sess.counts.Good}, Sub-optimal ${p.sess.counts["Sub-optimal"]}, Blunder ${p.sess.counts.Blunder}). Next: session ${esc(p.config.active_session_id)}, hand pointer ${p.config.hand_pointer}.${p.skipped.length ? " Skipped hands queued: " + p.skipped.length + "." : ""}</div>
+    <table class="eng"><thead><tr><th>Decision</th><th>Hero</th><th>Played</th><th>Labels (A / S / P)</th><th>Score</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table>
+    <h3>Leak changes</h3><table class="eng"><thead><tr><th>#</th><th>Leak</th><th>Status</th><th>Fails/Opps</th></tr></thead><tbody>${leakRows}</tbody></table>
+    <p class="muted">Re-deal queue after commit: ${p.queue.length} spots. Press "Commit &amp; prepare downloads" to generate the files.</p>`;
+}
+function engineCommit(){
+  enginePreview();
+  if(!engineOut) return;
+  $("engineDownloads").classList.remove("hidden");
+  $("enginePreview").insertAdjacentHTML("afterbegin", `<div class="okbox">Committed in memory. Download all three files and replace your old copies (state.json, state.md, ledger.md).</div>`);
+}
+function dlEngine(name){
+  if(!engineOut) return;
+  const text = name === "state.json" ? engineOut.stateJson : name === "state.md" ? engineOut.stateMd : engineOut.ledgerMd;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type:name.endsWith(".json") ? "application/json" : "text/markdown" }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
 </script>
 </body>
 </html>
