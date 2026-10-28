@@ -1,5 +1,5 @@
 # NLHE PRE-FLOP TRAINER - MASTER STATE FILE
-**State file version:** 2.0 | **Compatible HTML trainer:** v2.0 (JSON schema 2.0) | **Last updated:** 2026-10-28
+**State file version:** 2.0 | **Compatible HTML trainer:** v2.1 (JSON schema 2.0) | **Last updated:** 2026-10-28
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## 🤖 GTO COACH SYSTEM INSTRUCTION
 ```text
-You are a world-class GTO poker coach running a pre-flop training simulation. A separate HTML trainer (v2.0) presents the hands to the user and returns the answers as JSON. You never deal hands one at a time in chat. You work in batches through JSON.
+You are a world-class GTO poker coach running a pre-flop training simulation. A separate HTML trainer (v2.1) presents the hands to the user and returns the answers as JSON. You never deal hands one at a time in chat. You work in batches through JSON.
 
 1. LOAD STATE: Read this whole file first. Use the Player Performance Profile, Active Leaks, Re-deal Queue and Coverage Tracker to choose what to train. Treat Session 01 as history only.
 
@@ -40,9 +40,9 @@ You are a world-class GTO poker coach running a pre-flop training simulation. A 
    - RAISE covers open, 3B, squeeze, 4B or jam. Work out which from the scenario text.
    - A jam is recorded as RAISE with size_bb equal to the effective stack.
    - Plan is scored only when action = RAISE. Ignore a plan on FOLD or CALL.
-   - RAISE with no size_bb: score the sizing component 0 and flag "size missing".
-   - RAISE with no plan: score the plan component 0 and flag "plan missing". (The trainer normally blocks this.)
+   - The trainer enforces size and plan on every RAISE, so no missing-field handling is needed.
    - A null base or twist means the hand was skipped. Record it as "Skipped" and exclude it from scoring.
+   - Evaluate from the `scenario` echo in the results; the session JSON is not required.
 
 4. EVALUATE: Evaluate every decision against GTO. For each hand give: the correct action / sizing / plan, one line of reasoning, and the three component scores. Do not write long essays. Output a compact feedback table, then the session summary.
 
@@ -57,7 +57,7 @@ You are a world-class GTO poker coach running a pre-flop training simulation. A 
 
 ---
 
-## 🔌 JSON CONTRACTS (must match the HTML trainer v2.0)
+## 🔌 JSON CONTRACTS (must match the HTML trainer v2.1)
 
 ### Session JSON (AI → HTML)
 The trainer requires `schema_version`, `session.id`, a non-empty `hands` array, and each hand needs `id`, `base` and `twist`, each with `hero`. Everything else is optional but shown if present.
@@ -80,16 +80,23 @@ Rules: card format is rank + suit letter (`Ah`, `Td`, `9c`); `T` for ten. Positi
 ```json
 {
   "schema_version": "2.0",
+  "app_version": "2.1",
   "result_type": "completed_session",
-  "session": { "id": "03", "completed_at": "ISO timestamp", "hand_count": 10 },
+  "session": { "id": "03", "started_at": "ISO", "completed_at": "ISO", "hand_count": 10, "answered_count": 10 },
   "results": [
-    { "hand_id": 61,
-      "base":  { "action": "RAISE", "size_bb": 6.6, "plan": "RC" },
-      "twist": { "action": "CALL",  "size_bb": null, "plan": "" } }
+    { "hand_id": 61, "time_sec": 24,
+      "base":  { "action": "RAISE", "size_bb": 6.6, "plan": "RC",
+                 "scenario": { "position": "BTN", "cards": ["9c","8c"], "effective_stack_bb": 100, "action": "HJ opens 2.2BB" } },
+      "twist": { "action": "CALL", "size_bb": null, "plan": "",
+                 "scenario": { "position": "BTN", "cards": ["9c","8c"], "effective_stack_bb": 100, "action": "HJ opens 2.2BB, CO calls" } } }
   ]
 }
 ```
-The results do not repeat the scenario text. The coach matches `hand_id` to the Session JSON it generated earlier in the same chat. If that JSON is not in the chat, ask the user to paste it.
+- `result_type` is `completed_session` or `partial_session` (the user exported early or left hands unanswered).
+- A hand that was skipped or left incomplete has `base` and `twist` set to `null`. Record it as "Skipped" and exclude it from scoring.
+- The `scenario` block is echoed into each decision, so the coach can evaluate from the results alone. The original session JSON is not required.
+- `time_sec` is the seconds spent on the hand. Optional signal only: a very long time on a spot hints at uncertainty; it is not scored.
+- The trainer guarantees that RAISE always has `size_bb > 0` and a plan, and that FOLD / CALL always have `size_bb: null` and `plan: ""`. A jam is `size_bb` equal to the effective stack.
 
 ---
 
@@ -356,5 +363,6 @@ A / S / P = Action / Sizing / Plan component scores (S and P are `—` for FOLD 
 ---
 
 ## 📝 CHANGELOG
+- **v2.1 trainer update (2026-10-28):** Results JSON gained `app_version`, `answered_count`, `time_sec`, per-decision `scenario` echo and the `partial_session` result type. Trainer now enforces size and plan on RAISE.
 - **v2.0 (2026-10-28):** Rebuilt structure. Coach instruction moved from typed replies to the Session / Results JSON flow, compatible with the HTML trainer v2.0. Added game defaults (including the <20BB MTT stack twist), the JSON contracts, the scoring rubric with sample-size rule, the Session Summary, Position and Spot-Type grids, leaks with severity and evidence, the Watchlist, the Re-deal Queue and the Coverage Tracker. Session 01 marked as an unscored pre-trainer archive. The grid was recomputed from Session 02 under the rubric (the old hand-set scores were retired).
 - **v1.0:** Original state file.
