@@ -158,3 +158,20 @@
 *   **Hand 70:** CO | AsKd | ⏱ 50s
     - *Base (Hero opens 2.5BB from CO, BTN 3-bets to 8BB, blinds fold):* Call [A: Good → 80] AKo vs a BTN 3B: call is fine; 4B is the mixed alternative.
     - *Twist (Hero opens 2.5BB from CO, BTN 3-bets to 8BB, hero 4-bets to 19BB, BTN shoves 100BB):* Call all-in [A: Excellent → 100] AKo calls the jam.
+
+### ⏱️ Session 04 | 2026-10-28 17:53 UTC | Hands 71–75 | Avg score 82 | Time 3m33s
+*   **Hand 71:** SB | TcTd | ⏱ 72s
+    - *Base (BTN opens 2.5BB):* 3B 9BB [Plan: RC] [A: Excellent · S: Sub-optimal · P: Excellent → 83] OOP 3-bet vs 2.5BB open needs to be larger (~4x+). Size up to 10-11BB from SB.
+    - *Twist (BTN opens 2.5BB, BB 3-bets to 9BB):* 4B Cold-4B 36BB [Plan: RP] [A: Blunder · S: Blunder · P: Blunder → 0] Cold 4-betting TT out of position into two players is a disaster. Pure fold.
+*   **Hand 72:** CO | AdJc | ⏱ 43s
+    - *Base (Folded to hero):* Open 2BB [Plan: RF] [A: Excellent · S: Sub-optimal · P: Excellent → 83] 150BB deep requires larger open sizing (~2.5BB) to build the pot in position.
+    - *Twist (Hero opens 2.5BB from CO, BTN 3-bets to 8BB):* Fold [A: Excellent → 100] Great discipline folding weak offsuit broadway to an IP 3-bet 150BB deep.
+*   **Hand 73:** BTN | KdJd | ⏱ 36s
+    - *Base (HJ opens 2.2BB, CO calls):* Call [A: Excellent → 100] Perfect execution. At 40BB short, flatting or folding suited broadways vs open+caller is mandatory.
+    - *Twist (HJ opens 2.2BB, CO calls):* Squeeze 10BB [Plan: RC] [A: Excellent · S: Excellent · P: Sub-optimal → 83] Squeeze size is great, but KJs must plan to fold to a 4-bet (RF), not call (RC).
+*   **Hand 74:** CO | AcJh | ⏱ 25s
+    - *Base (Folded to hero):* Open 2BB [Plan: RF] [A: Excellent · S: Sub-optimal · P: Excellent → 83] 150BB deep needs up-sizing to 2.5BB from the CO to exploit stack depth.
+    - *Twist (Folded to hero):* Raise 2BB [Plan: RF] [A: Excellent · S: Excellent · P: Excellent → 100] Standard 100BB open with AJo from CO is perfectly executed.
+*   **Hand 75:** BB | Qs9s | ⏱ 37s
+    - *Base (SB limps):* ISO 3.5BB [Plan: RC] [A: Excellent · S: Excellent · P: Sub-optimal → 83] ISO sizing is clean over the limp, but Q9s is a pure bluff-raise; must plan to fold to a 3-bet (RF).
+    - *Twist (SB opens 3BB):* Fold [A: Excellent → 100] Good fold. Q9s cannot handle a standard 3BB open from the SB out of the BB.
